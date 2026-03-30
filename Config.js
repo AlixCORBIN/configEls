@@ -1,7 +1,7 @@
 import Els from "./Els.js"
 
 /// \brief read JSON config and create elements from it
-export default class Config {
+export class View {
 	/// \param | in ] config : JSoN object who represent HMI (see README for full details)
 	/// \param | in ] id : base ID of every element created
 	/// \param [ in ] params : config parameters
@@ -43,6 +43,12 @@ export default class Config {
 			}
 		}
 		return conf;
+	}
+
+	/// \return clean object, with domEls inside
+	get els ( )
+	{
+		return this._config;
 	}
 
 	#eventData = {
@@ -252,5 +258,231 @@ export default class Config {
 			
 			this._entries.push ( entries );
 		}
+
+		console.log ( this._callbacksFunctions )
 	}
+}
+
+export class Config extends EventTarget {
+	constructor ( params )
+	{
+		super ( );
+
+		this._config = _objMerge ( this.defaultConfig, params );
+	}
+
+	load ( id )
+	{
+		return this.loadMem ( id )
+			.catch ( ()=>this.loadFile ({
+				id
+			}))
+			.then ( r=>{
+				if ( "views" != id )
+				{
+					return r;
+				}
+
+				this._config.views = this._config.views.map ( (c,i)=>new View ( c, "V_"+i, {} ) );
+
+				return this;
+			})
+			.catch ( r=>console.log( "error", r ) )
+	}
+
+	loadMem ( id )
+	{
+		if ( !this._config?.cookies?.[ id ] )
+		{
+			return Promise.reject ( );
+		}
+
+		let ret = localStorage.getItem ( this._config?.cookies?.[ id ] );
+
+		if ( !ret )
+		{
+			return Promise.reject ( );
+		}
+
+		try
+		{
+			this._config.views = JSON.parse ( ret );
+		}
+		catch ( err )
+		{
+			let e = new Event ( "error" );
+			e.msg = "failed to parse config in cookie";
+
+			return Promise.reject ( );
+		}
+
+		this._config.status[ id ] = "mem";
+		return Promise.resolve ( );
+	}
+
+	/// \brief load config from external file
+	loadFile ( params )
+	{
+		params = Object.assign ( {
+			force: false,
+			file: this._config?.files?.[ params.id ],
+			path: this._config?.files?.path || "",
+		}, params );
+
+		if ( this._config?.[ params.id ]
+			&& !params.force )
+		{
+			return Promise.reject ( "data already exist for object : "+params.id );
+		}
+
+		if ( !params.file )
+		{
+			return Promise.reject ( "no file name for object : "+params.id );
+		}
+
+		return fetch ( params.path + params.file )
+			.then ( r=>{
+				if ( r.ok )
+				{
+					return r.text ( )
+				}
+				else
+				{
+					throw "File "+params.path+params.file+" can't be read"
+				}
+			})
+			.then ( eval )
+			.then ( r=>{
+				if ( "Array" == r.constructor.name )
+				{
+					return r;
+				}
+				else
+				{
+					throw params.file+" has invalide struct, need to ba a primitive array of object"
+				}
+			})
+			.then ( data=>{
+				let promises = [];
+				data.map ( d=>{
+					let p = undefined;
+					if ( d.file )
+					{
+						p = this.loadFile ( {
+								force:true,
+								file: d.file,
+								path: params.path
+							})
+							.then ( r=>d.dataset = r );
+					}
+					else
+					{
+						p = Promise.resolve ( );
+					}
+					promises.push ( p )
+				});
+
+				return Promise.all ( promises )
+					.catch ( console.error )
+					.then ( ()=>data )
+			})
+			.then( data=>{
+				if ( params.id )
+				{
+					this._config[ params.id ] = data;
+					this._config.status[ params.id ] = "file";
+				}
+				return data;
+			})
+	}
+
+	export ( )
+	{
+
+	}
+
+	save ( id )
+	{
+		if ( !this._config?.cookies?.[ id ] )
+		{
+			return Promise.reject ( "can't save cookie name not defined" );
+		}
+
+		localStorage.setItem ( this._config.cookie[ id ], JSON.stringify ( json ) );
+
+		return Promise.resolve ( );
+	}
+
+	get defaultConfig ( )
+	{
+		return {
+			cookies: {
+				views: undefined,
+			},
+			files: {
+				path: "/db/",
+				views: undefined,
+			},
+			views: undefined,
+			status: {
+				views: undefined,
+			},
+		};
+	}
+
+	get views ( )
+	{
+		return this._config.views
+	}
+}
+
+/// \brief Merge two elements to e new one
+/// \param[ in ] obj1 : base object 
+/// \param[ in ] obj2 : second object
+/// \note if obj1.foo and obj2.foo exist obj2 will overwrite obj1 in the new one
+/// \note be care obj1 use a deep copy, obj2 overwrite it with shadowcopy
+function _objMerge ( obj1, obj2 )
+{
+	let d = {...obj1};
+
+	for ( let s in obj2 )
+	{
+		switch ( obj2[s]?.constructor.name )
+		{
+			case "Object":
+			{
+				if ( !d[s] )
+				{ // if property doesn't exist deep cpy
+					d[s]=obj2[s];
+				}
+				else
+				{
+					d[s] = _objMerge ( obj1[s], obj2[s] );
+				}
+				break;
+			}
+			case "Array":
+			{
+				d[s]=obj2[s];
+				break;
+			}
+			default:
+			{
+				console.log( obj2[s].constructor.name )
+			}
+			case 'Boolean':
+			case 'Number':
+			case 'String':
+			{
+				d[s]=obj2[s];
+				break;
+			}
+			case undefined:
+			{
+				break;
+			}
+		}
+	}
+
+	return d
 }
