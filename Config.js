@@ -235,7 +235,7 @@ export class View {
 		}
 	}
 
-	new ( params )
+	new ( )
 	{
 		return this._getPopup ( "new" )
 			.then ( ()=>{
@@ -246,9 +246,9 @@ export class View {
 
 				this._popup.new.els.map ( c=>this._popup.new.els[ c.id ] = c );
 
-				if ( params?.class )
+				if ( this._params?.class )
 				{
-					this._popup.new.els.view_popup_new_dom.classList.add ( ...params.class );
+					this._popup.new.els.view_popup_new_dom.classList.add ( ...this._params.class );
 				}
 
 				this._popup.new.els.view_popup_new_ok.onclick = ()=>{
@@ -256,6 +256,8 @@ export class View {
 					this._newClean ( );
 
 					document.body.removeChild ( this._popup.new.dom );
+
+					this.setIO ( );
 				};
 
 				this._popup.new.els.view_popup_new_wait.onclick = ()=>{
@@ -463,11 +465,28 @@ export class Config extends EventTarget {
 					return r;
 				}
 
-				this._config.views = this._config.views.map ( (c,i)=>new View ( c, "V_"+i, {} ) );
+				this._config.views = this._config.views.map ( (c,i)=>new View ( c, "V_"+i, this._config ) );
 
 				return this;
 			})
 			.catch ( r=>console.log( "error", r ) )
+	}
+
+	export ( )
+	{
+
+	}
+
+	save ( )
+	{
+		if ( !this._config?.cookies?.views )
+		{
+			return Promise.reject ( "can't save cookie name not defined" );
+		}
+
+		localStorage.setItem ( this._config.cookie.views, JSON.stringify ( this.views.map ( v=>v.config ) ) );
+
+		return Promise.resolve ( );
 	}
 
 	_loadMem ( id )
@@ -576,23 +595,6 @@ export class Config extends EventTarget {
 			})
 	}
 
-	export ( )
-	{
-
-	}
-
-	save ( )
-	{
-		if ( !this._config?.cookies?.views )
-		{
-			return Promise.reject ( "can't save cookie name not defined" );
-		}
-
-		localStorage.setItem ( this._config.cookie.views, JSON.stringify ( this.views.map ( v=>v.config ) ) );
-
-		return Promise.resolve ( );
-	}
-
 	get defaultConfig ( )
 	{
 		return {
@@ -608,6 +610,8 @@ export class Config extends EventTarget {
 				views: undefined,
 			},
 			viewIndex: 0,
+			class: undefined,
+			units: undefined,
 		};
 	}
 
