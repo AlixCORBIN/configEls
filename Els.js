@@ -4059,9 +4059,29 @@ function _createTable ( outDivs = {}, params )
 
 					let iVal = document.createElement ( "input" );
 					cell.appendChild ( iVal );
-					iVal.value = params.json.options[ i ][ item ] || "";
+					switch ( params?.json?.options?.[ i ]?.[ item ]?.constructor.name )
+					{
+						case "Array":
+						case "Object":
+						{
+							iVal.value = JSON.stringify ( params.json.options[ i ][ item ] );
+							break;
+						}
+						default:
+						{
+							iVal.value = params.json.options[ i ][ item ] || "";
+							break;
+						}
+					}
 					iVal.onchange = (ev)=>{
-						params.json.options[ i ][ item ] = ev.target.value.trim ( );
+						try
+						{
+							params.json.options[ i ][ item ] = JSON.parse ( ev.target.value.trim ( ) );
+						}
+						catch ( e )
+						{
+							params.json.options[ i ][ item ] = ev.target.value.trim ( );
+						}
 						Els_Back.newJson ( params.json, outDivs.json, outDivs.outObj );
 					}
 				}
