@@ -2,6 +2,15 @@ import Els from "./Els.js"
 
 /// \brief read JSON config and create elements from it
 export class View {
+
+	#eventData = {
+		// contient les données a envoyer sur evenement
+	};
+
+	#eventEmitter = {
+		// contient les fonctions d'envoie sur evenement
+	};
+
 	/// \param | in ] config : JSoN object who represent HMI (see README for full details)
 	/// \param | in ] id : base ID of every element created
 	/// \param [ in ] params : config parameters
@@ -18,46 +27,12 @@ export class View {
 		this._id = id;
 		this._params = params;
 		this._entries = [];
+		this._popup = {
+			new: {},
+		};
 
 		this.update ( );
 	}
-
-	///\return array of callback elements
-	get callbacks ( )
-	{
-		return this._callbacksFunctions || [];
-	}
-
-	/// \return clean config object, who could be used to create new "Config"
-	get config ( )
-	{
-		let conf = JSON.parse ( JSON.stringify ( this._config ) );
-		for ( let i = 0; i < conf.dataset.length; i++ )
-		{
-			delete conf.dataset[ i ].el; // remove main div
-			delete conf.dataset[ i ].cel; // remove grid div
-			if ( undefined == conf.dataset[ i ].data )
-			{
-				delete conf.dataset.splice ( i , 1 ) // remove empty dataset element
-				i--;
-			}
-		}
-		return conf;
-	}
-
-	/// \return clean object, with domEls inside
-	get els ( )
-	{
-		return this._config;
-	}
-
-	#eventData = {
-		// contient les données a envoyer sur evenement
-	};
-
-	#eventEmitter = {
-		// contient les fonctions d'envoie sur evenement
-	};
 
 	/// \brief add event listener on channel (fromm callback) to get data from a socket
 	/// \param [ in ] socket : input socket
@@ -258,8 +233,213 @@ export class View {
 			
 			this._entries.push ( entries );
 		}
+	}
 
-		console.log ( this._callbacksFunctions )
+	new ( params )
+	{
+		return this._getPopup ( "new" )
+			.then ( ()=>{
+				document.body.appendChild ( this._popup.new.dom );
+
+				this._popup.new.dom.style.display = "";
+				this._popup.new.items ||= [];
+
+				this._popup.new.els.map ( c=>this._popup.new.els[ c.id ] = c );
+
+				if ( params?.class )
+				{
+					this._popup.new.els.view_popup_new_dom.classList.add ( ...params.class );
+				}
+
+				this._popup.new.els.view_popup_new_ok.onclick = ()=>{
+					this._newValidate ( );
+					this._newClean ( );
+
+					document.body.removeChild ( this._popup.new.dom );
+				};
+
+				this._popup.new.els.view_popup_new_wait.onclick = ()=>{
+					document.body.removeChild ( this._popup.new.dom );
+				}
+
+				this._popup.new.els.view_popup_new_ko.onclick = ()=>{
+					this._newClean ( );
+					
+					document.body.removeChild ( this._popup.new.dom );
+				}
+
+				this._popup.new.els.view_popup_new_add.onclick = ()=>{
+					this._popup.new.items.push ( {} );
+					addNewSelect ({
+						outList: this._popup.new.els.view_popup_new_list,
+						index:   this._popup.new.items.length - 1,
+						div: {
+							json:   this._popup.new.els.view_popup_new_json,
+							config: this._popup.new.els.view_popup_new_config,
+							out:    this._popup.new.els.view_popup_new_dom,
+						},
+						item: this._popup.new.items[ this._popup.new.items.length - 1 ],
+					});
+				};
+			})
+	}
+
+	modify ( index )
+	{
+		return this.new ( )
+			.then ( ()=>{
+				this._popup.new.els.view_popup_new_width.value = this.config.dataset[ index ].x;
+				this._popup.new.els.view_popup_new_height.value = this.config.dataset[ index ].y;
+
+				// overwrite callback
+				this._popup.new.els.view_popup_new_ok.onclick = ()=>{
+					this._newValidate ( index );
+					this._newClean ( );
+
+					document.body.removeChild ( this._popup.new.dom );
+				};
+			})
+			.then ( ()=>{
+				this._popup.new.items = JSON.parse ( JSON.stringify ( this.config.dataset[ index ].data ) );
+
+				this._popup.new.items.map ( (item,index)=>{
+					addNewSelect ({
+						outList: this._popup.new.els.view_popup_new_list,
+						index:   index,
+						type:    item.type,
+						div: {
+							json:   this._popup.new.els.view_popup_new_json,
+							config: this._popup.new.els.view_popup_new_config,
+							out:    this._popup.new.els.view_popup_new_dom,
+						},
+						item: item,
+						objConfig: item,
+					})
+				})
+			})
+	}
+
+	_getPopup ( name )
+	{
+		if ( this._popup[ name ] )
+		{
+			this._popup[ name ] = {}
+		}
+
+		if ( this._popup[ name ].dom )
+		{
+			return Promise.resolve ( this._popup[ name ].dom );
+		}
+		else
+		{
+			let path = new Error()
+				.stack
+				.split ( "\n" )
+				.filter ( p=>p.indexOf("_getPopup@")>=0)[ 0 ];
+
+			path = path.slice ( path.indexOf ( "http" ), path.lastIndexOf ( "/" ) );
+			path = path+`/html/popup_`+name+`.html`;
+
+			return fetch ( path )
+				.then ( r=>{
+					if ( r.ok )
+					{
+						return r.text ( );
+					}
+					else
+					{
+						throw "file not read";
+					}
+				})
+				.then ( parseHTML )
+				.then ( dom=>{
+					this._popup[ name ].dom = dom.querySelector ( "#view_popup_new" );
+					this._popup[ name ].els = [];
+
+					this._popup[ name ].els.push ( ...dom.querySelectorAll ( "td" ) );
+					this._popup[ name ].els.push ( ...dom.querySelectorAll ( "button" ) );
+					this._popup[ name ].els.push ( ...dom.querySelectorAll ( "div" ) );
+					this._popup[ name ].els.push ( ...dom.querySelectorAll ( "input" ) );
+
+					this._popup[ name ].els = this._popup[ name ].els.filter ( cell=>cell.id );
+
+					return dom;
+				})
+		}
+	}
+
+	_newValidate ( index )
+	{
+		let json = {
+			x: Number ( this._popup.new.els.view_popup_new_width.value ),
+			y: Number ( this._popup.new.els.view_popup_new_height.value ),
+			class: "items",
+			data: [],
+		};
+
+		for ( let item of this._popup.new.items.filter ( i=>i ) )
+		{
+			json.data.push ( JSON.parse ( item.json.value ) );
+		}
+
+		if ( undefined != index )
+		{
+			this._config.dataset[ index ] = json;
+		}
+		else
+		{
+			this._config.dataset.push ( json )
+		}
+
+		this.update ( );
+
+		document.dispatchEvent ( new Event ( "viewUpdate" ) );
+	}
+
+	_newClean ( )
+	{
+		[
+			this._popup.new.els.view_popup_new_list,
+			this._popup.new.els.view_popup_new_json,
+			this._popup.new.els.view_popup_new_config,
+			this._popup.new.els.view_popup_new_dom,
+		].map ( d=>{
+			while ( d.firstChild )
+			{
+				d.removeChild ( d.lastChild );
+			}
+		});
+
+		this._popup.new.items = [];
+	}
+
+	///\return array of callback elements
+	get callbacks ( )
+	{
+		return this._callbacksFunctions || [];
+	}
+
+	/// \return clean config object, who could be used to create new "Config"
+	get config ( )
+	{
+		let conf = JSON.parse ( JSON.stringify ( this._config ) );
+		for ( let i = 0; i < conf.dataset.length; i++ )
+		{
+			delete conf.dataset[ i ].el; // remove main div
+			delete conf.dataset[ i ].cel; // remove grid div
+			if ( undefined == conf.dataset[ i ].data )
+			{
+				delete conf.dataset.splice ( i , 1 ) // remove empty dataset element
+				i--;
+			}
+		}
+		return conf;
+	}
+
+	/// \return clean object, with domEls inside
+	get els ( )
+	{
+		return this._config;
 	}
 }
 
@@ -273,8 +453,8 @@ export class Config extends EventTarget {
 
 	load ( id )
 	{
-		return this.loadMem ( id )
-			.catch ( ()=>this.loadFile ({
+		return this._loadMem ( id )
+			.catch ( ()=>this._loadFile ({
 				id
 			}))
 			.then ( r=>{
@@ -290,7 +470,7 @@ export class Config extends EventTarget {
 			.catch ( r=>console.log( "error", r ) )
 	}
 
-	loadMem ( id )
+	_loadMem ( id )
 	{
 		if ( !this._config?.cookies?.[ id ] )
 		{
@@ -321,7 +501,7 @@ export class Config extends EventTarget {
 	}
 
 	/// \brief load config from external file
-	loadFile ( params )
+	_loadFile ( params )
 	{
 		params = Object.assign ( {
 			force: false,
@@ -368,7 +548,7 @@ export class Config extends EventTarget {
 					let p = undefined;
 					if ( d.file )
 					{
-						p = this.loadFile ( {
+						p = this._loadFile ( {
 								force:true,
 								file: d.file,
 								path: params.path
@@ -401,14 +581,14 @@ export class Config extends EventTarget {
 
 	}
 
-	save ( id )
+	save ( )
 	{
-		if ( !this._config?.cookies?.[ id ] )
+		if ( !this._config?.cookies?.views )
 		{
 			return Promise.reject ( "can't save cookie name not defined" );
 		}
 
-		localStorage.setItem ( this._config.cookie[ id ], JSON.stringify ( json ) );
+		localStorage.setItem ( this._config.cookie.views, JSON.stringify ( this.views.map ( v=>v.config ) ) );
 
 		return Promise.resolve ( );
 	}
@@ -427,12 +607,33 @@ export class Config extends EventTarget {
 			status: {
 				views: undefined,
 			},
+			viewIndex: 0,
 		};
 	}
 
 	get views ( )
 	{
-		return this._config.views
+		return this._config.views;
+	}
+
+	get view ( )
+	{
+		return this.views[ this.index ];
+	}
+
+	get index ( )
+	{
+		return this._config.viewIndex || 0;
+	}
+
+	set index ( value )
+	{
+		if ( isNaN ( value ) )
+		{
+			return;
+		}
+
+		this._config.viewIndex = Number ( value ) % this.views.length;
 	}
 }
 
@@ -485,4 +686,140 @@ function _objMerge ( obj1, obj2 )
 	}
 
 	return d
+}
+
+function parseHTML ( markup )
+{
+	if (markup.toLowerCase().trim().indexOf('<!doctype') === 0)
+	{
+		var doc = document.implementation.createHTMLDocument("");
+		doc.documentElement.innerHTML = markup;
+		return doc;
+	}
+	else if ('content' in document.createElement('template'))
+	{
+		// Template tag exists!
+		var el = document.createElement('template');
+		el.innerHTML = markup;
+		return el.content;
+	}
+	else
+	{
+		// Template tag doesn't exist!
+		var docfrag = document.createDocumentFragment();
+		var el = document.createElement('body');
+		el.innerHTML = markup;
+		
+		for (i = 0; 0 < el.childNodes.length;)
+		{
+			docfrag.appendChild(el.childNodes[i]);
+		}	
+		return docfrag;
+	}
+}
+
+function addNewSelect ( params = {} )
+{
+	let timer = undefined;
+	let selector = document.createElement( "select" );
+	selector.id = params?.index;
+
+	selector.onchange=(ev)=>{
+		params.change = true;
+		params.type = ev.target.value;
+		getElsNewDom( params );
+	};
+	selector.onmouseover=(ev)=>{
+		timer = setTimeout ( ()=>{
+			params.change = false;
+			getElsNewDom ( params );
+		}, 200 );
+	};
+	selector.onmouseleave = (ev)=>{
+		clearTimeout ( timer );
+	}
+
+	for ( let k of Object.keys ( Els ) )
+	{
+		if ( !Els[ k ].canCreateNew ( ) )
+		{
+			continue;
+		}
+		let option = document.createElement( "option" );
+		option.value = k;
+		option.innerHTML = k;
+
+		selector.appendChild ( option );
+	}
+	if ( params?.type )
+	{
+		selector.value = params?.type;
+	}
+	else
+	{
+		params.type = selector.value;
+	}
+
+	let button = document.createElement( "button" );
+	button.appendChild ( document.createTextNode ( " - " ) );
+	button.onclick = (ev)=>{
+	}
+
+	let div = document.createElement( "div" );
+	div.appendChild ( selector );
+	div.appendChild ( button );
+
+	params.change = true;
+
+	getElsNewDom ( params )
+
+	params.outList.appendChild ( div );
+}
+
+async function getElsNewDom ( params )
+{
+	let oldOut = undefined;
+
+	if ( params.change )
+	{
+		let nItem = await Els[ params.type ]
+			.new ({
+				jsonDiv:  "view_popup_new_json",
+				configDiv:"view_popup_new_config",
+				outDiv:   "view_popup_new_dom",
+				index: params.index,
+				class: params.type,
+				channels: []
+			}, params.objConfig );
+
+		if ( !nItem?.out )
+		{
+			console.error ( "error a item creatiion" );
+			return;
+		}
+
+		if ( params.item.out )
+		{
+			params.item.out.replaceWith ( nItem.out );
+		}
+		else
+		{
+			params.div.out.appendChild ( nItem.out );
+		}
+
+		Object.assign ( params.item, nItem );
+	}
+
+	while ( params.div.json.firstChild )
+	{
+		params.div.json.removeChild ( params.div.json.lastChild );
+	}
+
+	while ( params.div.config.firstChild )
+	{
+		params.div.config.removeChild ( params.div.config.lastChild );
+	}
+
+	params.div.config.appendChild ( params.item.config );
+	params.div.json.appendChild ( params.item.json );
 }
