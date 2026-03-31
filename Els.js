@@ -126,6 +126,7 @@ class Els_Back {
 				channel: {
 					fnct: _createInput,
 					args: [ "channel", params.channels ],
+					value: config?.channel,
 				},
 				periode: {
 					fnct: _createSelectPeriode ,
@@ -183,11 +184,15 @@ class Els_Back {
 
 					for ( let k in item )
 					{
-						if ( [ "value", "fnct", "args", "onchange", "onkeyup" ].includes ( k ) )
+						if ( [ "fnct", "args", "onchange", "onkeyup" ].includes ( k ) )
 						{ // specials key
 							continue;
 						}
 
+						if ( undefined == item[ k ] )
+						{
+							continue;
+						}
 						sub[ key ].input[ k ] = item[ k ];
 					}
 
@@ -370,6 +375,7 @@ class Els_text extends Els_Back {
 			text: {
 				fnct: _createInput,
 				args: [ "text" ],
+				value: config?.text,
 			},
 		};
 
@@ -430,6 +436,7 @@ class Els_img extends Els_text {
 			src: {
 				fnct: _createInput,
 				args: [ "src" ],
+				value: config?.src,
 			},
 		};
 
@@ -1128,33 +1135,41 @@ class Els_io extends Els_Back {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
+		console.log( config )
+
 		params.confItem = {
 			label: {
 				fnct: _createInput,
 				args: [ "label" ],
+				value: config?.label,
 			},
 			default: {
 				fnct: _createInput,
 				args: [ "default" ],
 				placeholder: "default value",
+				value: config?.default,
 			},
 			domType: {
 				fnct: _createSelect,
 				args: [ Els_io._choices.domType, "dom type" ],
+				value: config?.domType,
 			},
 			valueType: {
 				fnct: _createInput,
 				args: [ "data type", Els_io._choices.valueType ],
 				placeholder: "nb digit / type",
+				value: config?.valueType,
 			},
 			unit: {
 				fnct: _createInput,
 				args: [ "unit" ],
+				value: config?.unit,
 			},
 			coef:{
 				fnct: _createInput,
 				args: [ "static Coef" ],
 				type: "number",
+				value: config?.coef,
 			}
 		};
 
@@ -3441,19 +3456,23 @@ function _createInput ( inLabel, option = undefined )
 		return [div,input];
 	}
 
-	if ( "Array" == option.constructor.name )
+	switch ( option.constructor.name )
 	{
-		let dataList = document.createElement ( "datalist" );
-		div.appendChild ( dataList );
-		dataList.id = "fh_"+Math.random()+"_"+Math.random();
-
-		input.setAttribute("list", dataList.id);
-
-		for ( let o of option )
+		case "Array":
 		{
-			let tmp = document.createElement ( "option" );
-			dataList.appendChild ( tmp );
-			tmp.value = o;
+			let dataList = document.createElement ( "datalist" );
+			div.appendChild ( dataList );
+			dataList.id = "fh_"+Math.random()+"_"+Math.random();
+
+			input.setAttribute("list", dataList.id);
+
+			for ( let o of option )
+			{
+				let tmp = document.createElement ( "option" );
+				dataList.appendChild ( tmp );
+				tmp.value = o;
+			}
+			break;
 		}
 	}
 
