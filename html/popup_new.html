@@ -1,0 +1,85 @@
+<div id="view_popup_new">
+	<style>
+		#view_popup_new {
+			position: fixed;
+			background-color: var( --main-back );
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100%;
+			width: 100%;
+			top: 0;
+			left: 0;
+		}
+		#view_popup_new > table {
+			width: 80%;
+			height: 80%;
+			padding: 10%;
+		}
+		#view_popup_new tr:nth-child(n+2):nth-child(-n+3) td.cellConfig {
+			width: 50%;
+			height: 300px;
+		}
+		#view_popup_new td.cellConfig {
+			vertical-align: top;
+			padding: 5px;
+		}
+		#view_popup_new button {
+			font-size: 1em;
+		}
+		#view_popup_new td.cellConfig button > * {
+			display: inline-block;
+			width: 100%;
+		}
+		#view_popup_new select,
+		#view_popup_new input {
+			flex-grow: 1;
+			max-width: calc( 100% - 4px );
+		}
+		#view_popup_new textarea {
+			width: calc( 100% - 8px );
+			height: calc( 100% - 8px );
+		}
+		#view_popup_new select {
+			font-size: 1em;
+		}
+		#view_popup_new_size input {
+			width: 4em;
+		}
+		#view_popup_new_list > div {
+			display: flex;
+		}
+		#view_popup_new_config table {
+			border-collapse: separate;
+		}
+	</style>
+	<table>
+		<tr>
+			<td colspan="2" id="view_popup_new_size">
+				<label>width: </label><input id="view_popup_new_width" type="number" min="1" value="1">
+				<br>
+				<label>height: </label><input id="view_popup_new_height" type="number" min="1" value="1">
+			</td>
+		</tr>
+		<tr>
+			<td class="cellConfig">
+				<div id="view_popup_new_list"></div>
+				<button id="view_popup_new_add">+</button>
+			</td>
+			<td class="cellConfig" id="view_popup_new_dom"></td>
+		</tr>
+		<tr>
+			<td class="cellConfig" id="view_popup_new_json"></td>
+			<td class="cellConfig" id="view_popup_new_config"></td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<div>
+					<button id="view_popup_new_ok">Validate</button>
+					<button id="view_popup_new_wait">Wait</button>
+					<button id="view_popup_new_ko">Cancel</button>
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>
