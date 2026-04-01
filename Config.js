@@ -83,14 +83,21 @@ export class View {
 		{
 			if ( c.channel )
 			{
-				list[ c.channel ] = c.periode;
+				let channel = c.channel;
+
+				if ( 1 < channel.split ( ":" ).length )
+				{
+					channel = channel.split ( ":" ).slice ( 1 ).join ( ":" );
+				}
+
+				list[ channel ] = c.periode;
 				if ( undefined != socket.on )
 				{ // if we-re using socket.io
-					socket.on ( c.channel, c.f );
+					socket.on ( channel, c.f );
 				}
 				else
 				{ // if we're using basics websockets
-					socket.addEventListener ( c.channel, c.f );
+					socket.addEventListener ( channel, c.f );
 				}
 			}
 
@@ -137,6 +144,15 @@ export class View {
 						c.args.domEl.removeEventListener ( "change", c.fnOnInput );
 						c.args.domEl.addEventListener ( "change", c.fnOnInput = ()=>{
 
+							let cmd = "data-set";
+							let channel = c.channel;
+
+							if ( 2 == c.channel.split ( ":" ).length )
+							{
+								cmd = c.channel.split ( ":" )[ 0 ];
+								channel = c.channel.split ( ":" )[ 1 ];
+							}
+
 							let value = c.args?.domEl?.value;
 							let format = c.args?.format;
 
@@ -154,8 +170,8 @@ export class View {
 								console.log ( e )
 							};
 
-							socketEmiter ( "data-set", {
-								[ c.channel ]: value,
+							socketEmiter ( cmd, {
+								[ channel ]: value,
 							});
 						});
 					}
