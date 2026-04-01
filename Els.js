@@ -888,32 +888,36 @@ class Els_io extends Els_Back {
 					break;
 				}
 				case "date":
-				{
-					return (msg)=>{
-						if ( isNaN ( msg.value ) )
-						{
-							this.value = msg.value;
-							return;
-						}
-
-						let value = msg.value * ( c.coef || 1 );
-
-						this.value = new Date ( value ).toISOString ( ).replace ( "T"," " ).replace ( /\.\d\d\dZ/, "" );
-					};
-					break;
-				}
 				case "dateMs":
 				{
 					return (msg)=>{
-						if ( isNaN ( msg.value ) )
+						let value = msg;
+						if ( msg.value )
 						{
-							this.value = msg.value;
-							return;
+							value = msg.value;
 						}
 
-						let value = msg.value * ( c.coef || 1 );
+						if ( isNaN ( value ) )
+						{
+							this.value = value;
+						}
+						else
+						{
+							value = value * ( c.coef || 1 );
+						}
 
-						this.value = new Date ( value ).toISOString ( ).replace ( "T"," " ).replace ( "Z", "" );
+						value = new Date ( value );
+
+						if ( "date" == c.valueType )
+						{
+							this.value = value.toLocaleString ( "sv" ).replace ( /\.\d\d\dZ/, "" )
+						}
+						else
+						{
+							this.value = value.toLocaleString ( "sv" ).replace ( "Z", "" )
+								+"."
+								+value.getMilliseconds ( ).toString ( ).padStart ( 3, "0" );
+						}
 					};
 					break;
 				}
