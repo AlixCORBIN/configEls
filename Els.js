@@ -600,7 +600,7 @@ class Els_io extends Els_Back {
 		valueType: undefined,
 		label: undefined,
 		labelId: undefined,
-		prefix: undefined,
+		format: undefined,
 		action: undefined,
 		unit: undefined,
 	};
@@ -676,7 +676,7 @@ class Els_io extends Els_Back {
 		{
 			case "input":
 			{
-				this.divData.disabled = true;
+				this.divData.disabled = !!this._config?.inputConfig?.channel;
 
 				Object.assign ( this.divData, this._config.inputConfig )
 
@@ -723,11 +723,12 @@ class Els_io extends Els_Back {
 
 					this._callArgs.push ( cb );
 				}
-				break
+
+				break;
 			}
 			case "select":
 			{
-				this.divData.disabled = true;
+				this.divData.disabled = !!this._config?.inputConfig?.channel;
 
 				// used to give min / max or other data;
 				if ( this._config?.inputConfig?.channel )
@@ -782,6 +783,8 @@ class Els_io extends Els_Back {
 
 					this._callArgs.push ( cb );
 				}
+
+				break;
 			}
 		}
 
@@ -938,6 +941,19 @@ class Els_io extends Els_Back {
 				default:
 				{
 					return (msg)=>{
+						if ( c.inputConfig?.format )
+						{
+							let format = c.inputConfig?.format;
+							msg = JSON.parse ( msg );
+
+							Object.keys ( format ).map ( key=>{
+								if ( "${value}" == format[ key ] )
+								{
+									msg.value = msg[ key ];
+								}
+							});
+						}
+
 						if ( isNaN ( msg.value ) )
 						{
 							this.value = msg.value;
@@ -950,7 +966,7 @@ class Els_io extends Els_Back {
 						{
 							this.value = value;
 						}
-						else if ( undefined != refactor )
+						else if ( undefined != window.refactor )
 						{
 							let a = c.valueType;
 							if ( a == undefined )
@@ -1027,6 +1043,7 @@ class Els_io extends Els_Back {
 				cb.args = {
 					domEl: this.divData,
 					event: this._config.inputConfig?.event,
+					format: this._config.inputConfig?.format,
 				}
 			}
 
@@ -1063,7 +1080,6 @@ class Els_io extends Els_Back {
 				// 	break;
 				// }
 				case "channel":
-				case "prefix":
 				case "label_id":
 				{
 					break;

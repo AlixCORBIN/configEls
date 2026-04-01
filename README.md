@@ -155,7 +155,6 @@ Créait une `iframe` vers [open street map](https://www.openstreetmap.org/#map=6
 	channel:"WEBSOCKET CHANNEL",
 	label:"",
 	labelId:"", // cf texte ID
-	prefix:"prefix",
 	default:"...",
 	periode:0, // temps de rafraichissement
 	action: "min", // "min" / "max" / "average" utile uniquement si channel est un tableau (cf section io.action)
@@ -163,7 +162,7 @@ Créait une `iframe` vers [open street map](https://www.openstreetmap.org/#map=6
 		// - error set class error on data if value != 0
 		// - obj cf section io.obj
 	domType: "output", // output/input/select cf section io.input / io.select
-	unit: <Data> // cf Chapter valueType
+	unit: <Data>, // cf Chapter valueType
 }
 ```
 
@@ -235,9 +234,21 @@ Il est possible de définir l'io comme une input. auquel cas des données de con
 		max: 12, // pour les number
 		step: 0.1, // pour les number
 		title: "string", 
+		format: undefined // format d'nevoie de données
 	}
 }
 ```
+
+Attention le format est un Object ou une string representan un objet qui sert sur les donées d'entrée et de sortie, dans le cas ou on neveut pas simplement envoyer une donnée brut:
+
+par exemple :
+```javascript
+format: {
+	leLabel: "${value}"
+}
+```
+
+si la valeur de l'input est `50` l'object envoyé sera : `{"leLabel":"50"}`.
 
 #### io.select:
 Il est possible de définir l'io comme un select, auquel cas des données de configuration supplémentaire sont disponibles.
@@ -250,6 +261,7 @@ Il est possible de définir l'io comme un select, auquel cas des données de con
 	inputConfig:{
 		channel:"channelOptions"
 		event: undefined, // si c'est defini, attent un evenement global a la page pour emettre les données, peut etre generé par un bouton
+		format: undefined // format d'nevoie de données
 	}
 }
 ```

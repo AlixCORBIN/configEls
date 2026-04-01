@@ -136,8 +136,26 @@ export class View {
 					{
 						c.args.domEl.removeEventListener ( "change", c.fnOnInput );
 						c.args.domEl.addEventListener ( "change", c.fnOnInput = ()=>{
+
+							let value = c.args?.domEl?.value;
+							let format = c.args?.format;
+
+							if ( format ) try
+							{
+								if ( format?.constructor.name )
+								{
+									format = JSON.stringify ( format );
+								}
+
+								value = eval ( '`'+format+'`' );
+							}
+							catch ( e )
+							{
+								console.log ( e )
+							};
+
 							socketEmiter ( "data-set", {
-								[ c.channel ]: c.args?.domEl?.value,
+								[ c.channel ]: value,
 							});
 						});
 					}
