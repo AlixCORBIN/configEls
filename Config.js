@@ -157,7 +157,22 @@ export class View {
 					c.args.domEl.addEventListener ( "click", c.fnOnClick = ()=>{
 						if ( c.args.cmd )
 						{
-							socketEmiter ( "userCmd", {cmd:c.args.cmd, args:c.args.args} );
+							let mainCmd = c.args.cmd.split ( ":" )[ 0 ];
+							let data = {
+								args:c.args.args
+							};
+
+							try
+							{
+								data.cmd = c.args.cmd.split ( ":" ).slice ( 1 ).join ( ":" );
+								if ( 0 == data.cmd.length )
+								{
+									delete data.cmd;
+								}
+							}
+							catch ( e ) {};
+
+							socketEmiter ( mainCmd, data );
 						}
 
 						if ( c.args.event )
