@@ -599,7 +599,8 @@ class Els_io extends Els_Back {
 		default: "",
 		valueType: undefined,
 		label: undefined,
-		labelId: undefined,
+		prefix: undefined,
+		text_id: undefined,
 		format: undefined,
 		action: undefined,
 		unit: undefined,
@@ -626,7 +627,7 @@ class Els_io extends Els_Back {
 		{
 			this.divLabel.innerHTML = this._config.label;
 		}
-		if ( this._config.labelId )
+		if ( this._config.text_id )
 		{
 			_createTranslateItem ( this.divLabel, this._config );
 		}
@@ -658,6 +659,7 @@ class Els_io extends Els_Back {
 				}
 
 				domType = this._config.domType;
+
 				break;
 			}
 			default:
