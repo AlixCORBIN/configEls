@@ -3213,7 +3213,6 @@ class Els_button extends Els_Back {
 			alignItems: "strech",
 			textAlign: "center",
 			flexGrow: "1",
-			padding: "10px",
 		});
 
 		return {obj};
