@@ -916,6 +916,15 @@ class Els_io extends Els_Back {
 							});
 						}
 
+						if ( "String" == msg.constructor.name ) try
+						{
+							msg = JSON.parse ( msg );
+						}
+						catch ( e )
+						{
+							console.log ( e )
+						}
+
 						if ( isNaN ( msg.value ) )
 						{
 							this.value = msg.value;
