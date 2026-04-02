@@ -730,8 +730,6 @@ class Els_io extends Els_Back {
 			}
 			case "select":
 			{
-				this.divData.disabled = !!this._config?.inputConfig?.channel;
-
 				// used to give min / max or other data;
 				if ( this._config?.inputConfig?.channel )
 				{
@@ -739,52 +737,14 @@ class Els_io extends Els_Back {
 						periode: -1, // send once
 						channel: this._config.inputConfig.channel,
 						f: (msg)=>{
-							if ( "Array" != msg.value?.constructor.name )
-							{
-								return;
-							}
-
-							this.divData.disabled = false;
-							while ( this.divData.firstChild )
-							{
-								this.divData.removeChild ( this.divData.firstChild );
-							}
-
-							msg.value.map ( (item,index)=>{
-								let opt = document.createElement ( "option" );
-
-								if ( index == 0 )
-								{
-									opt.select = true;
-								}
-
-								if ( "Object" == item.constructor.name )
-								{
-									this.select.options.push ({value:item.value,text:item.text});
-
-									opt.value = item.value;
-									opt.innerText = item.text;
-								}
-								else
-								{
-									this.select.options.push ({value:item,text:item});
-
-									opt.value = item;
-									opt.innerText = item;
-								}
-
-								this.divData.appendChild ( opt );
-							})
-
-							if ( this.select?.value )
-							{
-								this.value = this.select.value;
-							}
+							this.#selectOptions ( msg.value );								
 						}
 					}
 
 					this._callArgs.push ( cb );
 				}
+
+				this.#selectOptions ( this._config.inputConfig?.options );
 
 				break;
 			}
@@ -1123,7 +1083,7 @@ class Els_io extends Els_Back {
 				else
 				{
 					let v = this.select.options.filter ( f=>f.value==value||f.text==value );
-					this.divData.value = v[ 0 ].value
+					this.divData.value = v[ 0 ]?.value
 				}
 				break;
 			}
@@ -1133,6 +1093,51 @@ class Els_io extends Els_Back {
 				break;
 			}
 		}
+	}
+
+	#selectOptions ( array )
+	{
+		this.divData.disabled = true;
+
+		if ( "select" != this._config.domType )
+		{
+			return;
+		}
+
+		if ( "Array" != array?.constructor.name )
+		{
+			return;
+		}
+
+		while ( this.divData.firstChild )
+		{
+			this.divData.removeChild ( this.divData.firstChild );
+		}
+
+		this.divData.disabled = true;
+		array.map ( (item,index)=>{
+			if ( "Object" == item.constructor.name )
+			{
+				this.select.options.push (item);
+			}
+			else
+			{
+				this.select.options.push ({value:item,text:item});
+			}
+		})
+
+		this.select.options.map ( (item)=>{
+			let opt = document.createElement ( "option" );
+
+			opt.value = item.value;
+			opt.innerText = item.text;
+
+			this.divData.appendChild ( opt );
+
+			this.value = this.select.value;
+		});
+
+		this.divData.disabled = ( this.select.options?.length <= 0 );
 	}
 
 	static canCreateNew ( )
