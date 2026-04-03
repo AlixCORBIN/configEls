@@ -1915,7 +1915,7 @@ class Els_graph extends Els_Back {
 		// manage X axis labels if it's date
 		function xAxisDateCallback (val, index)
 		{
-			val = new Date ( this.getLabelForValue(val) )
+			val = new Date ( val );
 
 			if ( 0 == index )
 			{
@@ -1926,17 +1926,12 @@ class Els_graph extends Els_Back {
 			{
 				this.xAxisLastDay = val.getDay ( );
 
-				return val
-					.toISOString ( )
-					.replace ( /\....Z/,"" )
-					.replace ( "T", " " );
+				return val.toLocaleString ( "sv" );
 			}
 			else
 			{
-				return val
-					.toISOString ( )
-					.replace ( /\....Z/,"" )
-					.replace ( /.+T/, "" );
+				return val.toLocaleString ( "sv" )
+					.replace ( /.+\s/, "" );
 			}
 		}
 
@@ -1953,6 +1948,103 @@ class Els_graph extends Els_Back {
 			this.graph.main.chart.resetZoom ( );
 			this.graph.main?.chart?.update ( );
 			this.graph.zoom?.chart?.update ( );
+		}
+
+		const getCallback = ( c, index )=>{
+			switch ( this.config.subType )
+			{
+				case "signal":
+				{
+					return ( msg )=>{
+						if ( "Array" !== msg.value?.constructor.name )
+						{
+							return;
+						}
+
+						let vXY = msg.value.filter ( a=>a.x!=undefined&&a.y!=undefined );
+						let vY = msg.value.filter ( a=>a.x==undefined&&a.y!=undefined );
+						let vN = msg.value.filter ( a=>!isNaN( a ) );
+
+						let v = undefined;
+
+						if ( 0 < vXY.length )
+						{
+							v = vXY;
+
+							if ( "date" == this.config.xAxisType )
+							{
+								console.log ( v[ 0 ])
+							}
+						}
+						else if ( 0 < vY.length )
+						{
+							v = vY.map ( (v,i)=>{
+								v.x = i; 
+								return v;
+							});
+						}
+						else
+						{
+							v = vN.map ( (v,i)=>{
+								return {x:i, y:v};
+							});
+						}
+
+						this.graph.main.config.data.datasets[ index ].trueData = v;
+						this.graph.main.config.data.datasets[ index ].data = v.map ( p=>{
+							p.y*=c.coef;
+							return p;
+						});
+
+						this._updateGraph ( "main" );
+						this._updateZoom ( zoomData );
+					}
+				}
+				case "sync":
+				{
+					return ( msg )=>{
+						if ( this.graph.main.config.data.datasets[ index ].data.length < this.graph.main.config.data.labels.length  )
+						{ // add data only if we add a label for this data
+							// add the data to the last label
+							this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * c.coef;
+							this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = msg.value;
+						}
+
+						this._updateGraph ( "main" );
+						this._updateZoom ( zoomData );
+					}
+				}
+				case "async":
+				{
+					return ( msg )=>{
+						console.log ( "graph async" );
+						console.log ( msg.value );
+
+						return;
+
+						// TODO test management c.coef
+						this.graph.main.config.data.datasets[ index ].trueData.push ( JSON.parse ( msg.value ) );
+
+						let point = JSON.parse ( msg.value );
+						point.y *= c.coef;
+						this.graph.main.config.data.datasets[ index ].data.push ( point );
+
+						let deep = c.deep || this.config.deep;
+						if ( ( undefined != deep )
+							&& ( this.graph.main.config.data.datasets[ index ].data.length > deep ) )
+						{
+							this.graph.main.config.data.datasets[ index ].data.splice( 0, this.graph.main.config.data.datasets[ index ].data.length - deep )
+						}
+
+						this._updateGraph ( "main" );
+						this._updateZoom ( zoomData );
+					}
+				}
+				default:
+				{
+					return ( msg )=>{};
+				}
+			}
 		}
 
 		super( config, id );
@@ -2228,86 +2320,7 @@ class Els_graph extends Els_Back {
 			this._callArgs.push ({
 				channel: c.channel,
 				periode: c.periode || 0,
-				f: ( msg )=>{
-					switch ( config.subType )
-					{
-						case "signal":
-						{
-							if ( "Array" !== msg.value?.constructor.name )
-							{
-								return;
-							}
-
-							let vXY = msg.value.filter ( a=>a.x!=undefined&&a.y!=undefined );
-							let vY = msg.value.filter ( a=>a.x==undefined&&a.y!=undefined );
-							let vN = msg.value.filter ( a=>!isNaN( a ) );
-
-							let v = undefined;
-
-							if ( 0 < vXY.length )
-							{
-								v = vXY;
-							}
-							else if ( 0 < vY.length )
-							{
-								v = vY.map ( (v,i)=>{
-									v.x = i; 
-									return v;
-								});
-							}
-							else
-							{
-								v = vN.map ( (v,i)=>{
-									return {x:i, y:v};
-								});
-							}
-
-							this.graph.main.config.data.datasets[ index ].trueData = v;
-							this.graph.main.config.data.datasets[ index ].data = v.map ( p=>{
-								p.y*=c.coef;
-								return p;
-							});
-
-							break;
-						}
-						case "sync":
-						{
-							if ( this.graph.main.config.data.datasets[ index ].data.length < this.graph.main.config.data.labels.length  )
-							{ // add data only if we add a label for this data
-								// add the data to the last label
-								this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * c.coef;
-								this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = msg.value;
-							}
-							break;
-						}
-						case "async":
-						{
-							console.log ( "graph async" );
-							console.log ( msg.value );
-
-							return;
-
-							// TODO test management c.coef
-							this.graph.main.config.data.datasets[ index ].trueData.push ( JSON.parse ( msg.value ) );
-
-							let point = JSON.parse ( msg.value );
-							point.y *= c.coef;
-							this.graph.main.config.data.datasets[ index ].data.push ( point );
-
-							let deep = c.deep || config.deep;
-							if ( ( undefined != deep )
-								&& ( this.graph.main.config.data.datasets[ index ].data.length > deep ) )
-							{
-								this.graph.main.config.data.datasets[ index ].data.splice( 0, this.graph.main.config.data.datasets[ index ].data.length - deep )
-							}
-
-							break;
-						}
-					}
-
-					this._updateGraph ( "main" );
-					this._updateZoom ( zoomData );
-				}
+				f: getCallback( c, index )
 			});
 
 			c.coef = 1;
