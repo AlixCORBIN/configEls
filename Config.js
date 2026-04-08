@@ -243,7 +243,11 @@ export class View {
 
 			// create main elements
 			ds.el = document.createElement ( "div" );
-			ds.el.className = ds.class;
+			ds.el.classList.add ( ...this._params.class );
+			if ( ds.class )
+			{
+				ds.el.classList.add ( ds.class );
+			}
 			ds.el.style = ds.style;
 			ds.el.title = ds.name || "";
 			
@@ -424,7 +428,6 @@ export class View {
 		let json = {
 			x: Number ( this._popup.new.els.view_popup_new_width.value ),
 			y: Number ( this._popup.new.els.view_popup_new_height.value ),
-			class: "items",
 			data: [],
 		};
 
