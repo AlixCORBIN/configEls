@@ -182,9 +182,14 @@ class Els_Back {
 
 					sub[ key ].input.value = config[ item ] || "";
 
+					if ( item.help )
+					{
+						sub[ key ].input.title = item.help;
+					}
+
 					for ( let k in item )
 					{
-						if ( [ "fnct", "args", "onchange", "onkeyup" ].includes ( k ) )
+						if ( [ "fnct", "args", "onchange", "onkeyup", "help" ].includes ( k ) )
 						{ // specials key
 							continue;
 						}
