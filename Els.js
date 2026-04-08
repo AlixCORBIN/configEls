@@ -313,6 +313,11 @@ class Els_Back {
 			console.error ( e );
 		}
 	}
+
+	static get parent ( )
+	{
+		return Object.getPrototypeOf ( this );
+	}
 }
 
 class Els_text extends Els_Back {
@@ -376,15 +381,21 @@ class Els_text extends Els_Back {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		params.confItem = {
-			text: {
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		if ( !params.confItem.text )
+		{
+			params.confItem.text = {
 				fnct: _createInput,
 				args: [ "text" ],
 				value: config?.text,
-			},
-		};
+			};
+		}
 
-		return Els_Back.new ( params, json, deep + 1 );
+		return this.parent.new ( params, json, deep + 1 );
 	}
 }
 
@@ -438,14 +449,28 @@ class Els_img extends Els_text {
 		}
 
 		params.confItem = {
-			src: {
+		};
+
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		if ( !params.confItem.src )
+		{
+			params.confItem.src = {
 				fnct: _createInput,
 				args: [ "src" ],
 				value: config?.src,
-			},
-		};
+			};
+		}
 
-		return Els_Back.new ( params, json, deep + 1 );
+		if ( !params.confItem.text )
+		{
+			params.confItem.text = {};
+		}
+
+		return this.parent.new ( params, json, deep + 1 );
 	}
 }
 
@@ -534,25 +559,39 @@ class Els_map extends Els_Back {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		params.confItem = {
-			latitude: {
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		if ( !params.confItem.latitude )
+		{
+			params.confItem.latitude = {
 				fnct: _createInput,
 				args: [ "Latitude (N/S)" ],
 				type: "number",
-			},
-			longitude: {
-				fnct: _createInput,
-				args: [ "Longitude (E/W)" ],
-				type: "number",
-			},
-			zoom: {
-				fnct: _createInput,
-				args: [ "Longitude (E/W)" ],
-				type: "number",
-			},
-		};
+			};
+		}
 
-		let divs = Els_Back.new ( params, json, deep + 1 );
+		if ( !params.confItem.longitude )
+		{
+			params.confItem.longitude = {
+				fnct: _createInput,
+				args: [ "Longitude (E/W)" ],
+				type: "number",
+			};
+		}
+
+		if ( !params.confItem.zoom )
+		{
+			params.confItem.zoom = {
+				fnct: _createInput,
+				args: [ "Longitude (E/W)" ],
+				type: "number",
+			};
+		}
+
+		let divs = this.parent.new ( params, json, deep + 1 );
 
 		divs.sub.latitude.input.value = isNaN ( json.gps[0].latitude )? "" : json.gps[0].latitude;
 		divs.sub.latitude.input.onchange = (ev)=>{
@@ -591,7 +630,6 @@ class Els_map extends Els_Back {
 		}
 
 		return divs;
-
 	}
 }
 
@@ -1176,45 +1214,81 @@ class Els_io extends Els_Back {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		console.log( config )
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
 
-		params.confItem = {
-			label: {
+		if ( !params.confItem.src )
+		{
+			params.confItem.src = {
+				fnct: _createInput,
+				args: [ "src" ],
+				value: config?.src,
+			};
+		}
+
+		if ( !params.confItem.label )
+		{
+			params.confItem.label = {
 				fnct: _createInput,
 				args: [ "label" ],
 				value: config?.label,
-			},
-			default: {
+				help: "text to display on the side of input value",
+			};
+		}
+
+		if ( !params.confItem.default )
+		{
+			params.confItem.default = {
 				fnct: _createInput,
 				args: [ "default" ],
 				placeholder: "default value",
 				value: config?.default,
-			},
-			domType: {
+				help: "text to display as value until get data",
+			};
+		}
+
+		if ( !params.confItem.domType )
+		{
+			params.confItem.domType = {
 				fnct: _createSelect,
 				args: [ Els_io._choices.domType, "dom type" ],
 				value: config?.domType,
-			},
-			valueType: {
+				help: "- output : used to display data\n- input : used to create text box to send data\n- select : used to send datas selectables from list",
+			};
+		}
+
+		if ( !params.confItem.valueType )
+		{
+			params.confItem.valueType = {
 				fnct: _createInput,
 				args: [ "data type", Els_io._choices.valueType ],
 				placeholder: "nb digit / type",
 				value: config?.valueType,
-			},
-			unit: {
+			};
+		}
+
+		if ( !params.confItem.unit )
+		{
+			params.confItem.unit = {
 				fnct: _createInput,
 				args: [ "unit" ],
 				value: config?.unit,
-			},
-			coef:{
+			};
+		}
+
+		if ( !params.confItem.coef )
+		{
+			params.confItem.coef = {
 				fnct: _createInput,
 				args: [ "static Coef" ],
 				type: "number",
 				value: config?.coef,
-			}
-		};
+			};
+		}
 
-		return Els_Back.new ( params, json );
+		return this.parent.new ( params, json, deep + 1 );
 	}
 }
 
@@ -1299,14 +1373,20 @@ class Els_bin extends Els_text {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		params.confItem = {
-			text: {
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		if ( !params.confItem.text )
+		{
+			params.confItem.text = {
 				fnct: _createInput,
 				args: [ "label" ],
-			}
-		};
+			};
+		}
 
-		return Els_Back.new ( params, json );
+		return Els_Back.new ( params, json, deep + 1 );
 	}
 }
 
@@ -1388,14 +1468,8 @@ class Els_multi extends Els_bin {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		params.confItem = {
-			text: {
-				fnct: _createInput,
-				args: [ "label" ],
-			},
-		};
 
-		let divs = Els_Back.new ( params, json, deep + 1 );
+		let divs = this.parent.new ( params, json, deep + 1 );
 
 		try // config
 		{
@@ -1534,7 +1608,7 @@ class Els_gauge extends Els_Back {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		let divs = Els_Back.new ( params, json, deep + 1 );
+		let divs = this.parent.new ( params, json, deep + 1 );
 
 		try // config
 		{
@@ -1726,6 +1800,31 @@ class Els_log extends Els_Back {
 		};
 
 		this._callArgs.push ( cb );
+	}
+
+	static canCreateNew ( )
+	{
+		return true;
+	}
+
+	static new ( params = {}, config = undefined, deep = 0 )
+	{
+		if ( undefined == params.id )
+		{
+			params.id = Math.random ( );
+		}
+
+		let json = undefined;
+		if ( deep )
+		{ // if not first call (deep!=0) then config no need to be check (check previously in child class)
+			json = config;
+		}
+		else
+		{
+			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
+		}
+
+		return this.parent.new ( params, json, deep + 1 );
 	}
 }
 
@@ -1975,11 +2074,6 @@ class Els_graph extends Els_Back {
 						if ( 0 < vXY.length )
 						{
 							v = vXY;
-
-							if ( "date" == this.config.xAxisType )
-							{
-								console.log ( v[ 0 ])
-							}
 						}
 						else if ( 0 < vY.length )
 						{
@@ -3267,8 +3361,14 @@ class Els_button extends Els_Back {
 			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
 		}
 
-		params.confItem = {
-			nbButtons: {
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		if ( !params.confItem.nbButtons )
+		{
+			params.confItem.nbButtons = {
 				fnct: _createInput,
 				args: [ "Nb of Buttons" ],
 				type: "number",
@@ -3279,10 +3379,10 @@ class Els_button extends Els_Back {
 				onchange: (ev)=>{
 					console.log ( 'coucou' );
 				}
-			},
-		};
+			};
+		}
 
-		let ret = Els_Back.new ( params, json );
+		let ret = this.parent.new ( params, json );
 
 		_createTable ( ret, {
 			labels: ["label","text","cmd","event","arg"],
@@ -3675,7 +3775,6 @@ function _createColorLimitTable ( divs, json, params = {} )
 		params.tableLength = ()=>{return iNb.value * 2 - 1};
 	}
 
-	console.log ( params.array )
 	let length = params.array.filter ( v=>!isNaN ( v ) ).length;
 
 	let [divNb,iNb] = _createInput ( "limits nb" );
@@ -3762,7 +3861,6 @@ function _createColorLimitTable ( divs, json, params = {} )
 		};
 
 		let creatColor = ( index )=>{
-			console.log ( params.array[ index ] )
 			let [divColor,iColor] = _createColorClicker ( {
 				callback: (ev,color)=>{
 					params.array[ index ] = "rgba("+color.join(',')+")";
