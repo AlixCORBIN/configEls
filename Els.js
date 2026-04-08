@@ -2565,6 +2565,9 @@ class Els_graph extends Els_Back {
 
 		if ( !this.graph?.[ id ]?.chart )
 		{
+			// this line pah inifnie grow, but not the best solution, need to revork it
+			this.divMain.style.maxHeight = this.divMain.clientHeight+"px";
+
 			this.graph[ id ].chart = new Chart ( this.graph[ id ].canvas.getContext('2d'), this.graph[ id ].config );
 			this.height = undefined;
 			return;
