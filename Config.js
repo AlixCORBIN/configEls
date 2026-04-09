@@ -73,6 +73,69 @@ export class View {
 			}
 		}
 
+		function inputEvent ( config, event )
+		{
+			if ( !this.#eventData[ config.args.event ] )
+			{
+				this.#eventData[ config.args.event ] = {};
+			}
+
+			this.#eventData[ config.args.event ][ config.channel ] = config.args.domEl.value;
+
+			if ( this.#eventEmitter[ config.args.event ] )
+			{
+				return;
+			}
+
+			this.#eventEmitter[ config.args.event ] = ()=>{
+				if ( 0 == Object.keys ( this.#eventData[ config.args?.event ] ).length )
+				{
+					return;
+				}
+
+				socketEmiter ( "data-set", this.#eventData[ config.args?.event ]);
+				this.#eventData[ config.args?.event ] = {};
+			};
+
+			document.addEventListener ( config.args?.event, this.#eventEmitter[ config.args?.event ] );
+		}
+
+		function inputEmit ( config, event )
+		{
+			let cmd = "data-set";
+			let channel = config.channel;
+
+			if ( 2 == config.channel.split ( ":" ).length )
+			{
+				cmd = config.channel.split ( ":" )[ 0 ];
+				channel = config.channel.split ( ":" )[ 1 ];
+			}
+
+			let value = config.args?.domEl?.value;
+			let format = config.args?.format;
+
+			if ( format ) try
+			{
+				if ( format?.constructor.name )
+				{
+					format = JSON.stringify ( format );
+				}
+
+				console.log ( value, format )
+
+				value = eval ( '`'+format+'`' );
+				console.log ( value )
+			}
+			catch ( e )
+			{
+				console.log ( e )
+			};
+
+			socketEmiter ( cmd, {
+				[ channel ]: value,
+			});
+		}
+
 		if ( undefined == socket )
 		{
 			return [];
@@ -81,6 +144,7 @@ export class View {
 		let list = {};
 		for ( let c of this._callbacksFunctions )
 		{
+			// listener from incomming data
 			if ( c.channel )
 			{
 				let channel = c.channel;
@@ -108,76 +172,21 @@ export class View {
 				{
 					break;
 				}
-				case "input":
+				case "input": // event utilisateur saisie de donnée
 				{
 					if ( c.args?.event )
 					{
 						c.args.domEl.removeEventListener ( "change", c.fnOnInput );
-						c.args.domEl.addEventListener ( "change", c.fnOnInput = ()=>{
-							if ( !this.#eventData[ c.args.event ] )
-							{
-								this.#eventData[ c.args.event ] = {};
-							}
-
-							this.#eventData[ c.args.event ][ c.channel ] = c.args.domEl.value;
-
-							if ( this.#eventEmitter[ c.args.event ] )
-							{
-								return;
-							}
-
-							this.#eventEmitter[ c.args.event ] = ()=>{
-								if ( 0 == Object.keys ( this.#eventData[ c.args?.event ] ).length )
-								{
-									return;
-								}
-
-								socketEmiter ( "data-set", this.#eventData[ c.args?.event ]);
-								this.#eventData[ c.args?.event ] = {};
-							};
-
-							document.addEventListener ( c.args?.event, this.#eventEmitter[ c.args?.event ] );
-						});
+						c.args.domEl.addEventListener ( "change", c.fnOnInput = inputEvent.bind ( null, c ) );
 					}
 					else
 					{
 						c.args.domEl.removeEventListener ( "change", c.fnOnInput );
-						c.args.domEl.addEventListener ( "change", c.fnOnInput = ()=>{
-
-							let cmd = "data-set";
-							let channel = c.channel;
-
-							if ( 2 == c.channel.split ( ":" ).length )
-							{
-								cmd = c.channel.split ( ":" )[ 0 ];
-								channel = c.channel.split ( ":" )[ 1 ];
-							}
-
-							let value = c.args?.domEl?.value;
-							let format = c.args?.format;
-
-							if ( format ) try
-							{
-								if ( format?.constructor.name )
-								{
-									format = JSON.stringify ( format );
-								}
-
-								value = eval ( '`'+format+'`' );
-							}
-							catch ( e )
-							{
-								console.log ( e )
-							};
-
-							socketEmiter ( cmd, {
-								[ channel ]: value,
-							});
-						});
+						c.args.domEl.addEventListener ( "change", c.fnOnInput = inputEmit.bind ( null, c ) );
 					}
 					break;
 				}
-				case "in":
+				case "in": // attente d'un event reçu (provenant d'un bouton par exemple)
 				{
 					document.removeEventListener ( c.args.event, c.fnOnEvent );
 					document.addEventListener ( c.args.event, c.fnOnEvent = (ev)=>{
@@ -185,7 +194,7 @@ export class View {
 					});
 					break;
 				}
-				case "out":
+				case "out": // event emis (provenant d'un bouton par exemple)
 				{
 					c.args.domEl.removeEventListener ( "click", c.fnOnClick );
 					c.args.domEl.addEventListener ( "click", c.fnOnClick = ()=>{
