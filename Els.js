@@ -3821,30 +3821,6 @@ function _createIconButton ( inLabel, iconName )
 ///     iColor : DOM element used to add event listener
 function _createColorClicker ( params = {} )
 {
-	/// \brief function called once user click on a color
-	/// \param [ in ] ev : event
-	/// \param [ in ] cb : user callback
-	function colorClicker ( ev, cb )
-	{
-		let target = ev.target;
-		if ( target.active == true )
-		{
-			return;
-		}
-		target.active = true;
-		createColorPiker( undefined,
-			(color)=>{
-				target.style.backgroundColor = "rgba("+color.join(',')+")";
-				target.active = false;
-				cb ( ev, color );
-			},
-			(color)=>{
-				target.style.backgroundColor = "rgba("+color.join(',')+")";
-				target.active = false;
-				cb ( ev, color );
-			});
-	}
-
 	params = Object.assign ( {
 		type: "div",
 		callback: undefined,
@@ -4304,8 +4280,19 @@ function _getSize ( object )
 
 
 
-/// params [ in ] outDivs :
-/// params [ in ] params :
+/// params [ in ] outDivs : return from this.parent.new ( ... ) -> ( Els_back.new ( ... ) )
+/// params [ in ] params : obect with parameters
+/// {
+/// 	json : json data printed in outDivs.json
+/// 	input : <id> of element used as nb row selector object found in outDivs.sub[ id ]
+/// 	dataPath : <path> path of data in param where data stored (as array)
+/// 	cols : array of object that describe table
+/// 		obj : {
+// 				text:"Sttring",
+// 				type: "text"/"number"/"checkbox",
+// 				id: "String",
+// 			} 
+/// }
 function _createTable ( outDivs = {}, params )
 {
 	try
@@ -4321,12 +4308,12 @@ function _createTable ( outDivs = {}, params )
 		let tr = document.createElement ( "tr" );
 		thead.appendChild ( tr );
 
-		for ( let item of params.labels )
+		for ( let item of params.cols )
 		{
 			let cell = document.createElement ( "th" );
 			tr.appendChild ( cell );
 
-			cell.innerText = item;
+			cell.innerText = item.text;
 		}
 
 		let tbody = document.createElement ( "tbody" );
@@ -4338,84 +4325,125 @@ function _createTable ( outDivs = {}, params )
 			return;
 		}
 
-		outDivs.sub[ params.input ].input.onchange = (ev)=>{
+		let nbRowDom = outDivs.sub[ params.input ].input;
+		let data = params.json;
+
+		for ( let lvl of params.dataPath?.split ( ".") )
+		{
+			data = data[ lvl ];
+		}
+
+		if ( !data )
+		{
+			throw "data not found for "+params.dataPath
+		}
+
+		nbRowDom.onchange = (ev)=>{
 			if ( ev.target.value < 0 )
 			{
 				ev.target.value = 0;
 			}
 
 			// manage output json
-			if ( ev.target.value < params.json.options.length )
+			if ( ev.target.value < data.length )
 			{
-				params.json.options = params.json.options.slice ( 0, ev.target.value );
+				data.splice ( ev.target.value );
 			}
-			else if ( ev.target.value > params.json.options.length )
+			else while ( ev.target.value > data.length )
 			{
-				for ( let i = params.json.options.length; i < ev.target.value; i++ )
-				{
-					params.json.options[ i ] = {};
-				}
+				data.push ({})
 			}
 
-			// draw table
-			while ( tbody.childElementCount >= params.json?.options?.length )
+			// remove line if too much
+			while ( tbody.childElementCount >= data?.length )
 			{
 				tbody.removeChild ( tbody.lastChild );
 			}
 
-			for ( let i = tbody.childElementCount; i < params.json.options.length; i++ )
+			// add lines if some missings
+			for ( let i = tbody.childElementCount; i < data.length; i++ )
 			{
-				let line = document.createElement ( "tr" );
-				tbody.appendChild ( line );
-
-				for ( let item of params.labels )
-				{
-					let cell = document.createElement ( "td" );
-					line.appendChild ( cell );
-
-					if ( !params.json.options[ i ] )
-					{
-						params.json.options[ i ] = {};
-					}
-
-					let iVal = document.createElement ( "input" );
-					cell.appendChild ( iVal );
-					switch ( params?.json?.options?.[ i ]?.[ item ]?.constructor.name )
-					{
-						case "Array":
-						case "Object":
-						{
-							iVal.value = JSON.stringify ( params.json.options[ i ][ item ] );
-							break;
-						}
-						default:
-						{
-							iVal.value = params.json.options[ i ][ item ] || "";
-							break;
-						}
-					}
-					iVal.onchange = (ev)=>{
-						try
-						{
-							params.json.options[ i ][ item ] = JSON.parse ( ev.target.value.trim ( ) );
-						}
-						catch ( e )
-						{
-							params.json.options[ i ][ item ] = ev.target.value.trim ( );
-						}
-						Els_Back.newJson ( params.json, outDivs.json, outDivs.outObj );
-					}
-				}
+				tbody.appendChild ( _createTable_Line ( params, data, i ) );
 			}
 
 			Els_Back.newJson ( params.json, outDivs.json, outDivs.outObj );
 		};
 
-		outDivs.sub[ params.input ].input.value = params.json.options.length;
-		outDivs.sub[ params.input ].input.dispatchEvent ( new Event ( "change" ) );
+		nbRowDom.value = data.length;
+		nbRowDom.dispatchEvent ( new Event ( "change" ) );
 	}
 	catch ( e )
 	{
 		console.log ( e );
+	}
+
+	function _createTable_Line ( params, data, index )
+	{
+		let line = document.createElement ( "tr" );
+
+		for ( let item of params.cols )
+		{
+			// get the data identifier
+			let id = item.id || item.text;
+
+			let cell = document.createElement ( "td" );
+			line.appendChild ( cell );
+
+			let iVal = document.createElement ( "input" );
+			cell.appendChild ( iVal );
+
+			switch ( item.type )
+			{
+				case "checkbox":
+				{
+					iVal.type = "checkbox";
+					iVal.checked = data[ index ][ id ] || false;
+
+					iVal.onchange = (ev)=>{
+						data[ index ][ id ] = ev.target.checked;
+
+						Els_Back.newJson ( params.json, outDivs.json, outDivs.outObj );
+					}
+					break;
+				}
+				case "number":
+				{
+					iVal.value = data[ index ][ id ] || "";
+
+					iVal.onchange = (ev)=>{
+						data[ index ][ id ] = Number ( ev.target.value );
+						ev.target.value = data[ index ][ id ];
+
+						Els_Back.newJson ( params.json, outDivs.json, outDivs.outObj );
+					}
+					break;
+				}
+				default:
+				case "text":
+				{
+					iVal.value = data[ index ][ id ] || "";
+
+					if ( [ "Array", "Object" ].includes ( data?.[ index ]?.[ id ]?.constructor.name ) )
+					{
+						iVal.value = JSON.stringify ( data[ index ][ id ] );
+					}
+
+					iVal.onchange = (ev)=>{
+						try
+						{
+							data[ index ][ id ] = JSON.parse ( ev.target.value.trim ( ) );
+						}
+						catch ( e )
+						{
+							data[ index ][ id ] = ev.target.value.trim ( );
+						}
+						Els_Back.newJson ( params.json, outDivs.json, outDivs.outObj );
+					}
+					break;
+				}
+			}
+		}
+
+		return line;
 	}
 }
