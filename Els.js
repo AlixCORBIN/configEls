@@ -1,5 +1,7 @@
 let Els_Debug = console.error
 
+import {colorClicker} from "../colorpicker/color.js"
+
 /// \brief base element for HMI display
 class Els_Back {
 	static _defaultConfig = {};
@@ -2019,6 +2021,26 @@ class Els_svg extends Els_Back {
 }
 
 class Els_graph extends Els_Back {
+	static _defaultConfig = {
+		type:"graph",
+		subType:"sync", // sync/signaml/async
+		channel:"WEBSOCKET CHANNEL X",
+		periode:0,
+		coef:1, // dans le cas ou le X doit etre modifié
+		curve:[
+			{
+				name:"Courbe 1",
+				channel:"WEBSOCKET CHANNEL Y",
+				periode:0,
+				color:"green",
+			}
+		]
+	};
+
+	static _choices = {
+		subType: [ "sync", "signal", "async" ],
+	};
+
 	constructor ( config, id )
 	{
 		// manage X axis labels if it's date
@@ -2176,6 +2198,7 @@ class Els_graph extends Els_Back {
 				chart: undefined, // base graph
 				config: { // conf for base graph
 					options: {
+						responsive: true,
 						maintainAspectRatio: false,
 						animation: false,
 						scales: {
@@ -2695,6 +2718,117 @@ class Els_graph extends Els_Back {
 		{
 			this._updateGraph ( item, true );
 		}
+	}
+
+	static canCreateNew ( )
+	{
+		return true;
+	}
+
+	static new ( params = {}, config = undefined, deep = 0 )
+	{
+		if ( undefined == params.id )
+		{
+			params.id = Math.random ( );
+		}
+
+		let json = undefined;
+		if ( deep )
+		{ // if not first call (deep!=0) then config no need to be check (check previously in child class)
+			json = config;
+		}
+		else
+		{
+			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
+		}
+
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		params.confItem = Object.assign ({
+			subType: {
+				fnct: _createSelect,
+				args: [ this._choices.subType, "Graph type" ],
+				value: config?.subType,
+				help: "- sync : \n- signal : \n- async",
+				onchange: (ev)=>{
+					json.subType = ev.target.value;
+					if ( "sync" == json.subType )
+					{
+						divs.sub.channel.div.style.display = "flex";
+						json.channel = divs.sub.channel.input.value;
+					}
+					else
+					{
+						divs.sub.channel.div.style.display = "none";
+						delete json.channel;
+					}
+
+					Els_Back.newJson ( json, divs.json, divs.outObj );
+				}
+			},
+			nbCurves: {
+				fnct: _createInput,
+				args: [ "Nb of Curves" ],
+				type: "number",
+				min: 0,
+				onchange: (ev)=>{
+					console.log ( 'coucou' );
+				}
+			},
+			deep: {
+				fnct: _createInput,
+				args: [ "nb of points displayed" ],
+				type: "number",
+				min: 0,
+			},
+			xAxisType: {
+				fnct: _createSelect,
+				args: [ [ "std", "date" ], "X axis type" ],
+				value: config?.xAxisType,
+				min: 0,
+			},
+			gridColor:{
+				fnct: _createColorClicker,
+				args: [{
+					type: "div",
+					label: "Color",
+					color: json.gridColor,
+					callback: (ev,color)=>{
+						json.gridColor = "rgba("+color.join(',')+")";
+						Els_Back.newJson ( json, divs.json, divs.outObj );
+					},
+				}]
+			}
+		},
+		params.confItem);
+
+		let divs = this.parent.new ( params, json, deep + 1 );
+
+		try
+		{
+			_createTable ( divs, {
+				cols:[
+					{text:"name"},
+					{text:"channel"},
+					{text:"color"},
+					{text:"coef",               type:"numbrer"},
+					{text:"tension",            type:"numbrer"},
+					{text:"lines",id:"showLine",type:"checkbox"},
+				],
+				input: "nbCurves",
+				dataPath: "curve",
+				json: json,
+			} );
+		}
+		catch ( e )
+		{
+			console.log ( e )
+		}
+
+		return divs;
 	}
 }
 
