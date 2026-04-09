@@ -386,14 +386,14 @@ class Els_text extends Els_Back {
 			params.confItem = {};
 		}
 
-		if ( !params.confItem.text )
-		{
-			params.confItem.text = {
+		params.confItem = Object.assign ({
+			text: {
 				fnct: _createInput,
 				args: [ "text" ],
 				value: config?.text,
-			};
-		}
+			}
+		},
+		params.confItem );
 
 		return this.parent.new ( params, json, deep + 1 );
 	}
@@ -456,19 +456,15 @@ class Els_img extends Els_text {
 			params.confItem = {};
 		}
 
-		if ( !params.confItem.src )
-		{
-			params.confItem.src = {
+		params.confItem = Object.assign ({
+			src: {
 				fnct: _createInput,
 				args: [ "src" ],
 				value: config?.src,
-			};
-		}
-
-		if ( !params.confItem.text )
-		{
-			params.confItem.text = {};
-		}
+			},
+			text: undefined,
+		},
+		params.confItem );
 
 		return this.parent.new ( params, json, deep + 1 );
 	}
@@ -564,32 +560,24 @@ class Els_map extends Els_Back {
 			params.confItem = {};
 		}
 
-		if ( !params.confItem.latitude )
-		{
-			params.confItem.latitude = {
+		params.confItem = Object.assign ({
+			latitude: {
 				fnct: _createInput,
 				args: [ "Latitude (N/S)" ],
 				type: "number",
-			};
-		}
-
-		if ( !params.confItem.longitude )
-		{
-			params.confItem.longitude = {
+			},
+			longitude: {
 				fnct: _createInput,
 				args: [ "Longitude (E/W)" ],
 				type: "number",
-			};
-		}
-
-		if ( !params.confItem.zoom )
-		{
-			params.confItem.zoom = {
+			},
+			zoom: {
 				fnct: _createInput,
 				args: [ "Longitude (E/W)" ],
 				type: "number",
-			};
-		}
+			},
+		},
+		params.confItem );
 
 		let divs = this.parent.new ( params, json, deep + 1 );
 
@@ -647,6 +635,7 @@ class Els_io extends Els_Back {
 		format: undefined,
 		action: undefined,
 		unit: undefined,
+		format: undefined,
 	};
 
 	static _choices = {
@@ -656,7 +645,7 @@ class Els_io extends Els_Back {
 			"select" // create a select with limited choices (client -> server)
 		],
 		valueType: ["obj", "volume", "flow", "temperature", "date", "dateMs", "error"],
-	}
+	};
 
 	constructor ( config,  id )
 	{
@@ -675,123 +664,11 @@ class Els_io extends Els_Back {
 			_createTranslateItem ( this.divLabel, this._config );
 		}
 
-		let domType = "div";
-
-		switch ( this._config.domType )
-		{
-			case "input":
-			{
-				if ( "string" != this._config.channel?.constructor.name.toLowerCase ( ) )
-				{
-					throw "only one chanel for inputs";
-				}
-
-				domType = this._config.domType;
-				break
-			}
-			case "select":
-			{
-				this.select = {
-					options: [],
-					value: undefined,
-				};
-
-				if ( "string" != config.channel?.constructor.name.toLowerCase ( ) )
-				{
-					throw "only one chanel for inputs";
-				}
-
-				domType = this._config.domType;
-
-				break;
-			}
-			default:
-			{
-				break;
-			}
-		}
-
 		// data
-		this.divData = document.createElement ( domType );
+		this.divData = document.createElement ( this.domType );
 		this._domEl.appendChild ( this.divData );
 		this.divData.className = "data";
 		this.value = config.default;
-
-		switch ( this._config.domType )
-		{
-			case "input":
-			{
-				this.divData.disabled = !!this._config?.inputConfig?.channel;
-
-				Object.assign ( this.divData, this._config.inputConfig )
-
-				this.divData.addEventListener ( "change", (ev)=>{
-					ev.target.classList.remove ( "err" );
-
-					if ( this._config.inputConfig.min > ev.target.value )
-					{
-						console.log ( "min", this._config.inputConfig.min, ev.target.value )
-						ev.stopImmediatePropagation ( );
-						ev.target.classList.add ( "err" );
-						ev.target.value = this._config.inputConfig.min;
-					}
-
-					if ( this._config.inputConfig.max < ev.target.value )
-					{
-						console.log ( "min", this._config.inputConfig.max, ev.target.value )
-						ev.target.classList.add ( "err" );
-						ev.stopImmediatePropagation ( );
-						ev.target.value = this._config.inputConfig.max;
-					}
-				})
-
-				// used to give min / max or other data;
-				if ( this._config?.inputConfig?.channel )
-				{
-					let cb = {
-						periode: -1, // send once
-						channel: this._config.inputConfig.channel,
-						f: (msg)=>{
-							this.divData.disabled = false;
-
-							if ( undefined != msg.value.step )
-							{
-								let p = Math.pow ( 10, Math.round ( Math.log10 ( msg.value.step ) ) - 1 )
-								msg.value.step = Math.round ( msg.value.step / p ) * p;
-							}
-
-							Object.assign ( this.divData, msg.value );
-							Object.assign ( this._config.inputConfig, msg.value );
-							this.divData.title = JSON.stringify ( msg.value, null, 4 );
-						}
-					}
-
-					this._callArgs.push ( cb );
-				}
-
-				break;
-			}
-			case "select":
-			{
-				// used to give min / max or other data;
-				if ( this._config?.inputConfig?.channel )
-				{
-					let cb = {
-						periode: -1, // send once
-						channel: this._config.inputConfig.channel,
-						f: (msg)=>{
-							this.#selectOptions ( msg.value );								
-						}
-					}
-
-					this._callArgs.push ( cb );
-				}
-
-				this.#selectOptions ( this._config.inputConfig?.options );
-
-				break;
-			}
-		}
 
 		// unit
 		this.divUnit = document.createElement ( "div" );
@@ -805,264 +682,9 @@ class Els_io extends Els_Back {
 		{
 			this.divUnit.style.display = "none"
 		}
-
-		const getCallback = ( c )=>{
-			switch ( c.valueType )
-			{
-				case "obj":
-				{
-					return (msg)=>{
-						if ( !this._config?.format )
-						{
-							return;
-						}
-						let out = "";
-						out = this._config.format;
-
-						if ( msg.value.label )
-						{
-							this.divLabel.innerHTML = msg.value.label;
-							delete msg.value.label;
-						}
-
-						for ( let k in msg.value )
-						{
-							out = out.replace ( ";"+k+";", msg.value[ k ] );
-						}
-
-						this.value = out;
-					};
-					break;
-				}
-				case "volume":
-				{
-					return (msg)=>{
-						if ( isNaN ( msg.value ) )
-						{
-							this.value = msg.value;
-							return;
-						}
-
-						let value = msg.value * ( c.coef || 1 );
-
-						let {coef,print} = _calcCoef ( this._config.valueType, this._config.unit, this._config.unitCurrent );
-
-						this.value = refactor ( value * coef , "v_"+this._config.unitCurrent.volume );
-						this.divUnit.innerHTML = print;
-					};
-					break;
-				}
-				case "flow":
-				{
-					return (msg)=>{
-						if ( isNaN ( msg.value ) )
-						{
-							this.value = msg.value;
-							return;
-						}
-
-						let value = msg.value * ( c.coef || 1 );
-						
-						let {coef,print} = _calcCoef ( this._config.valueType, this._config.unit, this._config.unitCurrent );
-
-						this.value = refactor ( value * coef , 1 );
-						this.divUnit.innerHTML = print;
-					}
-					break;
-				}
-				case "temperature":
-				{
-					return (msg)=>{
-						if ( isNaN ( msg.value ) )
-						{
-							this.value = msg.value;
-							return;
-						}
-
-						let value = msg.value * ( c.coef || 1 );
-
-						if ( this._config.unitCurrent
-							&& this._config.unit )
-						{
-							value = temperatureConvert ( value, this._config.unitCurrent.temperature, this._config.unit );
-						}
-						this.divData.innerText = refactor ( value, this._config.unitCurrent.temperature );
-
-						if ( this._config.unit )
-						{
-							this.divUnit.innerHTML = "°" + this._config.unitCurrent.temperature;
-						}
-					}
-					break;
-				}
-				case "date":
-				case "dateMs":
-				{
-					return (msg)=>{
-						let value = msg;
-						if ( msg.value )
-						{
-							value = msg.value;
-						}
-
-						if ( isNaN ( value ) )
-						{
-							this.value = value;
-						}
-						else
-						{
-							value = value * ( c.coef || 1 );
-						}
-
-						value = new Date ( value );
-
-						if ( "date" == c.valueType )
-						{
-							this.value = value.toLocaleString ( "sv" ).replace ( /\.\d\d\dZ/, "" )
-						}
-						else
-						{
-							this.value = value.toLocaleString ( "sv" ).replace ( "Z", "" )
-								+"."
-								+value.getMilliseconds ( ).toString ( ).padStart ( 3, "0" );
-						}
-					};
-					break;
-				}
-				case "error":
-				{
-					return (msg)=>{
-						this.value = Number ( msg.value );
-						if ( Number ( msg.value ) != 0 )
-						{
-							this.divData.classList.add ( "err" );
-						}
-						else
-						{
-							this.divData.classList.remove ( "err" );
-						}
-					}
-				}
-				default:
-				{
-					return (msg)=>{
-						if ( c.inputConfig?.format )
-						{
-							let format = c.inputConfig?.format;
-							msg = JSON.parse ( msg );
-
-							Object.keys ( format ).map ( key=>{
-								if ( "${value}" == format[ key ] )
-								{
-									msg.value = msg[ key ];
-								}
-							});
-						}
-
-						if ( "String" == msg.constructor.name ) try
-						{
-							msg = JSON.parse ( msg );
-						}
-						catch ( e )
-						{
-							console.log ( e )
-						}
-
-						if ( isNaN ( msg.value ) )
-						{
-							this.value = msg.value;
-							return;
-						}
-						
-						let value = msg.value * ( c.coef || 1 );
-
-						if ( "select" == this._config.domType )
-						{
-							this.value = value;
-						}
-						else if ( undefined != window.refactor )
-						{
-							let a = c.valueType;
-							if ( a == undefined )
-							{
-								a = 1;
-							}
-							this.value = refactor ( value, a );
-						}
-						else
-						{
-							this.value = value;
-						}
-
-						if ( c.unit )
-						{
-							this.divUnit.innerHTML =  c.unit;
-						}
-						else
-						{
-							this.divUnit.style.display = "none"
-						}
-					}
-				}
-			}
-		}
 		
-		if ( "array" === config.channel?.constructor?.name.toLowerCase ( ) )
-		{
-			this.currentData = [];
 
-			for ( let [index,channel] of config.channel.entries ( ) )
-			{
-				let f = getCallback ( config );
-				let cb = {
-					periode: config.periode || 0,
-					channel: config.channel,
-					f: (msg)=>{
-						let last = this.currentData[ index ];
-						this.currentData[ index ] = msg;
-
-						switch ( config.action )
-						{
-							case "min":
-							{
-								f ( this.currentData.sort ( (a,b)=>a-b )[ 0 ] );
-								break;
-							}
-							case "max":
-							{
-								f ( this.currentData.sort ( (a,b)=>b-a )[ 0 ] );
-								break;
-							}
-							case "average":
-							{
-								f ( this.currentData.reduce ( (a,v)=> v + a ) / this.currentData.length );
-								break;
-							}
-						}
-					}
-				};
-			}
-		}
-		else
-		{
-			let cb = {
-				periode: config.periode || 0,
-				channel: config.channel,
-				f: getCallback ( config )
-			};
-
-			if ( [ "input", "select" ].includes ( this._config.domType ) )
-			{
-				cb.eventType = "input";
-				cb.args = {
-					domEl: this.divData,
-					event: this._config.inputConfig?.event,
-					format: this._config.inputConfig?.format,
-				}
-			}
-
-			this._callArgs.push ( cb );
-		}
+		this._callArgs.push ( ...this.callObjs );
 	}
 
 	update ( config )
@@ -1089,10 +711,6 @@ class Els_io extends Els_Back {
 					break;
 				}
 				case "valueType":
-				// {
-				// 	this._config.periode = config.periode;
-				// 	break;
-				// }
 				case "channel":
 				case "label_id":
 				{
@@ -1109,88 +727,266 @@ class Els_io extends Els_Back {
 			value = "...";
 		}
 		
-		switch ( this.divData.nodeName.toLowerCase ( ) )
+		this.divData.innerHTML = value;
+	}
+
+	get domType ( )
+	{
+		return "div";
+	}
+
+	get callObjs ( )
+	{
+
+		if ( "array" === this._config.channel?.constructor?.name.toLowerCase ( ) )
 		{
-			case "input":
+			this.currentData = [];
+			let mainCallBack = this.callFnct;
+
+			return this._config.channel.map ( (channel,index)=>{
+				return {
+					periode: this._config.periode || 0,
+					channel: channel,
+					f: (msg)=>{
+						let last = this.currentData[ index ];
+						this.currentData[ index ] = msg;
+
+						switch ( config.action )
+						{
+							case "min":
+							{
+								mainCallBack ( this.currentData.sort ( (a,b)=>a-b )[ 0 ] );
+								break;
+							}
+							case "max":
+							{
+								mainCallBack ( this.currentData.sort ( (a,b)=>b-a )[ 0 ] );
+								break;
+							}
+							case "average":
+							{
+								mainCallBack ( this.currentData.reduce ( (a,v)=> v + a ) / this.currentData.length );
+								break;
+							}
+						}
+					}
+				};
+			});
+		}
+		else
+		{
+			return [{
+				periode: this._config.periode || 0,
+				channel: this._config.channel,
+				f: this.callFnct
+			}];
+		}
+	}
+
+	get callFnct ( )
+	{
+		function getValue ( msg, coef = 1, obj = false )
+		{
+			let v = msg;
+			if ( "String" == v.constructor.name ) try
 			{
-				this.divData.value = value;
-				break;
+				v = JSON.parse ( v );
 			}
-			case "select":
+			catch ( e ) { }
+
+			if ( undefined != v.value )
 			{
-				if ( !this.select?.options?.length )
+				v = v.value;
+			}
+
+			if ( obj )
+			{
+				if ( "String" == v ) try
 				{
-					while ( this.divData.firstChild )
+					v = JSON.parse ( v );
+				}
+				catch ( e )
+				{
+					console.log ( "Object requested : "+v );
+				}
+			}
+			else if ( !isNaN ( v ) )
+			{
+				v *= coef;
+			}
+
+			return v;
+		}
+
+		switch ( this._config.valueType )
+		{
+			case "obj":
+			{
+				return (msg)=>{
+					if ( !this._config?.format )
 					{
-						this.divData.removeChild ( this.divData.firstChild );
+						return;
+					}
+					let out = this._config.format || "";
+
+					let value = getValue ( msg, this._config.coef, true );
+
+					if ( msg?.value?.label )
+					{
+						this.divLabel.innerHTML = value.label;
+						delete msg.value.label;
 					}
 
-					let opt = document.createElement ( "option" );
-					opt.innerText = value;
+					for ( let k in value )
+					{
+						out = out.replace ( "${"+k+"}", value[ k ] );
+					}
 
-					this.divData.appendChild ( opt );
+					this.value = out;
+				};
+			}
+			case "volume":
+			{
+				return (msg)=>{
+					let value = getValue ( msg, this._config.coef );
 
-					this.select.value = value;
-				}
-				else
-				{
-					let v = this.select.options.filter ( f=>f.value==value||f.text==value );
-					this.divData.value = v[ 0 ]?.value
+					if ( isNaN ( msg.value ) )
+					{
+						this.value = msg.value;
+						return;
+					}
+
+					let {coef,print} = _calcCoef ( this._config.valueType, this._config.unit, this._config.unitCurrent );
+
+					this.value = refactor ( value * coef , "v_"+this._config.unitCurrent.volume );
+					this.divUnit.innerHTML = print;
+				};
+			}
+			case "flow":
+			{
+				return (msg)=>{
+					let value = getValue ( msg, this._config.coef );
+
+					if ( isNaN ( msg.value ) )
+					{
+						this.value = msg.value;
+						return;
+					}
+					
+					let {coef,print} = _calcCoef ( this._config.valueType, this._config.unit, this._config.unitCurrent );
+
+					this.value = refactor ( value * coef , 1 );
+					this.divUnit.innerHTML = print;
 				}
 				break;
+			}
+			case "temperature":
+			{
+				return (msg)=>{
+					let value = getValue ( msg, this._config.coef );
+
+					if ( isNaN ( value ) )
+					{
+						this.value = value;
+						return;
+					}
+
+					if ( this._config.unitCurrent
+						&& this._config.unit )
+					{
+						value = temperatureConvert ( value, this._config.unitCurrent.temperature, this._config.unit );
+					}
+					this.divData.innerText = refactor ( value, this._config.unitCurrent.temperature );
+
+					if ( this._config.unit )
+					{
+						this.divUnit.innerHTML = "°" + this._config.unitCurrent.temperature;
+					}
+				}
+			}
+			case "date":
+			case "dateMs":
+			{
+				return (msg)=>{
+					let value = getValue ( msg, this._config.coef );
+
+					if ( isNaN ( value ) )
+					{
+						this.value = value;
+						return;
+					}
+
+					value = new Date ( value );
+
+					if ( "date" == this._config.valueType )
+					{
+						this.value = value.toLocaleString ( "sv" ).replace ( /\.\d\d\dZ/, "" )
+					}
+					else
+					{
+						this.value = value.toLocaleString ( "sv" ).replace ( "Z", "" )
+							+"."
+							+value.getMilliseconds ( ).toString ( ).padStart ( 3, "0" );
+					}
+				};
+			}
+			case "error":
+			{
+				return (msg)=>{
+					let value = Number ( getValue ( msg ) );
+
+					this.value = value;
+					if ( value != 0 )
+					{
+						this.divData.classList.add ( "err" );
+					}
+					else
+					{
+						this.divData.classList.remove ( "err" );
+					}
+				}
 			}
 			default:
 			{
-				this.divData.innerHTML = value;
-				break;
+				return (msg)=>{
+					let value = getValue ( msg, this._config.coef );
+
+					if ( isNaN ( value ) )
+					{
+						this.value = value;
+						return;
+					}
+					
+					if ( "select" == this._config.domType )
+					{
+						this.value = value;
+					}
+					else if ( undefined != window.refactor )
+					{
+						let a = this._config.valueType;
+						if ( a == undefined )
+						{
+							a = 1;
+						}
+						this.value = refactor ( value, a );
+					}
+					else
+					{
+						this.value = value;
+					}
+
+					if ( this._config.unit )
+					{
+						this.divUnit.innerHTML =  this._config.unit;
+					}
+					else
+					{
+						this.divUnit.style.display = "none"
+					}
+				}
 			}
 		}
-	}
-
-	#selectOptions ( array )
-	{
-		this.divData.disabled = true;
-
-		if ( "select" != this._config.domType )
-		{
-			return;
-		}
-
-		if ( "Array" != array?.constructor.name )
-		{
-			return;
-		}
-
-		while ( this.divData.firstChild )
-		{
-			this.divData.removeChild ( this.divData.firstChild );
-		}
-
-		this.divData.disabled = true;
-		array.map ( (item,index)=>{
-			if ( "Object" == item.constructor.name )
-			{
-				this.select.options.push (item);
-			}
-			else
-			{
-				this.select.options.push ({value:item,text:item});
-			}
-		})
-
-		this.select.options.map ( (item)=>{
-			let opt = document.createElement ( "option" );
-
-			opt.value = item.value;
-			opt.innerText = item.text;
-
-			this.divData.appendChild ( opt );
-
-			this.value = this.select.value;
-		});
-
-		this.divData.disabled = ( this.select.options?.length <= 0 );
-	}
+	};
 
 	static canCreateNew ( )
 	{
@@ -1219,76 +1015,285 @@ class Els_io extends Els_Back {
 			params.confItem = {};
 		}
 
-		if ( !params.confItem.src )
-		{
-			params.confItem.src = {
-				fnct: _createInput,
-				args: [ "src" ],
-				value: config?.src,
-			};
-		}
-
-		if ( !params.confItem.label )
-		{
-			params.confItem.label = {
+		params.confItem = Object.assign ({
+			label: {
 				fnct: _createInput,
 				args: [ "label" ],
 				value: config?.label,
 				help: "text to display on the side of input value",
-			};
-		}
-
-		if ( !params.confItem.default )
-		{
-			params.confItem.default = {
+			},
+			default: {
 				fnct: _createInput,
 				args: [ "default" ],
 				placeholder: "default value",
 				value: config?.default,
 				help: "text to display as value until get data",
-			};
-		}
-
-		if ( !params.confItem.domType )
-		{
-			params.confItem.domType = {
-				fnct: _createSelect,
-				args: [ Els_io._choices.domType, "dom type" ],
-				value: config?.domType,
-				help: "- output : used to display data\n- input : used to create text box to send data\n- select : used to send datas selectables from list",
-			};
-		}
-
-		if ( !params.confItem.valueType )
-		{
-			params.confItem.valueType = {
+			},
+			valueType: {
 				fnct: _createInput,
 				args: [ "data type", Els_io._choices.valueType ],
 				placeholder: "nb digit / type",
 				value: config?.valueType,
-			};
-		}
-
-		if ( !params.confItem.unit )
-		{
-			params.confItem.unit = {
+			},
+			unit: {
 				fnct: _createInput,
 				args: [ "unit" ],
 				value: config?.unit,
-			};
-		}
-
-		if ( !params.confItem.coef )
-		{
-			params.confItem.coef = {
+			},
+			coef: {
 				fnct: _createInput,
 				args: [ "static Coef" ],
 				type: "number",
 				value: config?.coef,
-			};
-		}
+			}
+		},
+		params.confItem);
+
 
 		return this.parent.new ( params, json, deep + 1 );
+	}
+}
+
+class Els_input extends Els_io {
+	static _defaultConfig = {
+		type: "input",
+		channel: "WEBSOCKET CHANNEL",
+		periode: 1,
+		default: "",
+		action: undefined,
+		valueType: undefined,
+		format: undefined,
+		label: undefined,
+		prefix: undefined,
+		text_id: undefined,
+		unit: undefined,
+	};
+
+	static _choices = {
+		valueType: ["obj", "volume", "flow", "temperature", "date", "dateMs", "error"],
+	};
+
+	constructor ( config,  id )
+	{
+		super( config, id );
+
+		if ( "string" != this._config.channel?.constructor.name.toLowerCase ( ) )
+		{
+			throw "only one chanel for inputs";
+		}
+
+		this.divData.disabled = !!this._config?.fieldConfig?.channel;
+
+		Object.assign ( this.divData, this._config.fieldConfig )
+
+		this.divData.addEventListener ( "change", (ev)=>{
+			ev.target.classList.remove ( "err" );
+
+			if ( this._config.fieldConfig.min > ev.target.value )
+			{
+				console.log ( "min", this._config.fieldConfig.min, ev.target.value )
+				ev.stopImmediatePropagation ( );
+				ev.target.classList.add ( "err" );
+				ev.target.value = this._config.fieldConfig.min;
+			}
+
+			if ( this._config.fieldConfig.max < ev.target.value )
+			{
+				console.log ( "min", this._config.fieldConfig.max, ev.target.value )
+				ev.target.classList.add ( "err" );
+				ev.stopImmediatePropagation ( );
+				ev.target.value = this._config.fieldConfig.max;
+			}
+		});
+
+		// used to give min / max or other data;
+		if ( this._config?.fieldConfig?.channel )
+		{
+			let cb = {
+				periode: -1, // send once
+				channel: this._config.fieldConfig.channel,
+				f: (msg)=>{
+					this.divData.disabled = false;
+
+					if ( undefined != msg.value.step )
+					{
+						let p = Math.pow ( 10, Math.round ( Math.log10 ( msg.value.step ) ) - 1 )
+						msg.value.step = Math.round ( msg.value.step / p ) * p;
+					}
+
+					Object.assign ( this.divData, msg.value );
+					Object.assign ( this._config.fieldConfig, msg.value );
+					this.divData.title = JSON.stringify ( msg.value, null, 4 );
+				}
+			}
+
+			this._callArgs.push ( cb );
+		}
+	}
+
+	get domType ( )
+	{
+		return "input";
+	}
+
+	get callObjs ( )
+	{
+		return [{
+			periode: this._config.periode || 0,
+			channel: this._config.channel,
+			f: this.callFnct,
+			eventType: "input",
+			args: {
+				domEl: this.divData,
+				event: this._config.fieldConfig?.event,
+				format: this._config.fieldConfig?.format,
+			}
+		}];
+	}
+
+	set value ( value )
+	{
+		if ( undefined == value )
+		{
+			value = "...";
+		}
+		
+		this.divData.value = value;
+	}
+
+	static canCreateNew ( )
+	{
+		return false;
+	}
+}
+
+class Els_select extends Els_io {
+	constructor ( config,  id )
+	{
+		super( config, id );
+
+		this.select = {
+			options: [],
+			value: undefined,
+		};
+
+		if ( "string" != config.channel?.constructor.name.toLowerCase ( ) )
+		{
+			throw "only one chanel for inputs";
+		}
+
+		// used to give min / max or other data;
+		if ( this._config?.fieldConfig?.channel )
+		{
+			let cb = {
+				periode: -1, // send once
+				channel: this._config.fieldConfig.channel,
+				f: (msg)=>{
+					this.options = msg.value;
+				}
+			}
+
+			this._callArgs.push ( cb );
+		}
+
+		this.options = this._config.fieldConfig?.options;
+	}
+
+	get domType ( )
+	{
+		return "select";
+	}
+
+	get callObjs ( )
+	{
+		return [{
+			periode: this._config.periode || 0,
+			channel: this._config.channel,
+			f: this.callFnct,
+			eventType: "input",
+			args: {
+				domEl: this.divData,
+				event: this._config.fieldConfig?.event,
+				format: this._config.fieldConfig?.format,
+			}
+		}];
+	}
+
+	set options ( array )
+	{
+		this.divData.disabled = true;
+
+		if ( "Array" != array?.constructor.name )
+		{
+			return;
+		}
+
+		while ( this.divData.firstChild )
+		{
+			this.divData.removeChild ( this.divData.firstChild );
+		}
+
+		array.map ( (item,index)=>{
+			if ( "Object" == item.constructor.name )
+			{
+				this.select.options.push (item);
+			}
+			else
+			{
+				this.select.options.push ({value:item,text:item});
+			}
+		})
+
+		this.select.options.map ( (item)=>{
+			let opt = document.createElement ( "option" );
+
+			opt.value = item.value;
+			opt.innerText = item.text;
+
+			this.divData.appendChild ( opt );
+
+			this.value = this.select.value;
+		});
+
+		this.divData.disabled = ( this.select.options?.length <= 0 );
+	}
+
+	set value ( value )
+	{
+		if ( undefined == value )
+		{
+			value = "...";
+		}
+
+		if ( !this.select?.options )
+		{
+			return;
+		}
+		
+		if ( !this.select.options.length )
+		{
+			while ( this.divData.firstChild )
+			{
+				this.divData.removeChild ( this.divData.firstChild );
+			}
+
+			let opt = document.createElement ( "option" );
+			opt.innerText = value;
+
+			this.divData.appendChild ( opt );
+
+			this.select.value = value;
+		}
+		else
+		{
+			let v = this.select.options.filter ( f=>f.value==value||f.text==value );
+			this.divData.value = v[ 0 ]?.value
+		}
+	}
+
+	static canCreateNew ( )
+	{
+		return false;
 	}
 }
 
@@ -1378,13 +1383,13 @@ class Els_bin extends Els_text {
 			params.confItem = {};
 		}
 
-		if ( !params.confItem.text )
-		{
-			params.confItem.text = {
+		params.confItem = Object.assign ({
+			text: {
 				fnct: _createInput,
 				args: [ "label" ],
-			};
-		}
+			}
+		},
+		params.confItem);
 
 		return Els_Back.new ( params, json, deep + 1 );
 	}
@@ -3415,6 +3420,8 @@ const Els = {
 	graph: Els_graph,
 	csv: Els_csv,
 	button: Els_button,
+	input: Els_input,
+	select: Els_select,
 };
 
 export default Els;

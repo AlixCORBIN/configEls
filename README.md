@@ -40,13 +40,15 @@ Les datasets se présentent comme suis :
 ```
 Ces paramètres sont disponibles sur chacun des éléments suivant.
 
-### <a id="mainL" />liste des éléménts:
+### <a id="mainL" />liste des éléments:
 - [title](md/title.md)
 - [text](md/text.md)
 - [img](md/img.md)
 - [map](md/map.md)
 - [table](md/table.md)
 - [io](md/io.md)
+- [input](md/io.md#input)
+- [select](md/io.md#select)
 - [text_id](md/translation.md#text)
 - [title_id](md/translation.md#title)
 - [bin](md/bin.md)
@@ -57,3 +59,4 @@ Ces paramètres sont disponibles sur chacun des éléments suivant.
 - [graph](md/graph.md)
 - [csv](md/csv.md)
 - [button](md/button.md)
+
