@@ -3508,9 +3508,8 @@ class Els_button extends Els_Back {
 			params.confItem = {};
 		}
 
-		if ( !params.confItem.nbButtons )
-		{
-			params.confItem.nbButtons = {
+		params.confItem = Object.assign ({
+			nbButtons: {
 				fnct: _createInput,
 				args: [ "Nb of Buttons" ],
 				type: "number",
@@ -3521,18 +3520,26 @@ class Els_button extends Els_Back {
 				onchange: (ev)=>{
 					console.log ( 'coucou' );
 				}
-			};
-		}
+			}
+		},
+		params.confItem);
 
-		let ret = this.parent.new ( params, json );
+		let divs = this.parent.new ( params, json );
 
-		_createTable ( ret, {
-			labels: ["label","text","cmd","event","arg"],
+		_createTable ( divs, {
+			cols: [
+				{text:"label"},
+				{text:"text"},
+				{text:"cmd"},
+				{text:"event"},
+				{text:"arg"}
+			],
 			input: "nbButtons",
+			dataPath: "options",
 			json: json
 		} );
 
-		return ret;
+		return divs;
 	}
 }
 
