@@ -399,7 +399,7 @@ export class View {
 			let path = new Error()
 				.stack
 				.split ( "\n" )
-				.filter ( p=>p.indexOf("_getPopup@")>=0)[ 0 ];
+				.filter ( p=>p.indexOf("_getPopup")>=0)[ 0 ];
 
 			path = path.slice ( path.indexOf ( "http" ), path.lastIndexOf ( "/" ) );
 			path = path+`/html/popup_`+name+`.html`;
