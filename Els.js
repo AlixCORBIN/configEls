@@ -3749,7 +3749,6 @@ function _createInput ( inLabel, option = undefined )
 		let label = document.createElement ( "label" );
 		div.appendChild ( label );
 		label.innerHTML = inLabel+" : ";
-		label.style.flexGrow = 1;
 	}
 
 	let input = document.createElement ( "input" );
@@ -4314,6 +4313,7 @@ function _createTable ( outDivs = {}, params )
 			tr.appendChild ( cell );
 
 			cell.innerText = item.text;
+			cell.title = item.help || item.text;
 		}
 
 		let tbody = document.createElement ( "tbody" );
