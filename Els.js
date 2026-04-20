@@ -1110,7 +1110,6 @@ class Els_input extends Els_io {
 					if ( this._config.fieldConfig.min > ev.target.value )
 					{
 						console.log ( "min", this._config.fieldConfig.min, ev.target.value )
-						ev.stopImmediatePropagation ( );
 						ev.target.classList.add ( "err" );
 						ev.target.value = this._config.fieldConfig.min;
 					}
@@ -1119,7 +1118,6 @@ class Els_input extends Els_io {
 					{
 						console.log ( "min", this._config.fieldConfig.max, ev.target.value )
 						ev.target.classList.add ( "err" );
-						ev.stopImmediatePropagation ( );
 						ev.target.value = this._config.fieldConfig.max;
 					}
 					break;

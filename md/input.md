@@ -29,7 +29,7 @@ Créait un champ texte permettant de définir une interaction textuelle remontan
 			dataId: "${value}"
 		},
 		event: undefined, // si c'est défini, attend un événement global a la page pour émettre les données, peut être généré par un bouton
-		type: "number", // number, string, checkbox
+		type: "number", // number, range, string, checkbox
 		min: 0, // pour les number
 		max: 12, // pour les number
 		step: 0.1, // pour les number
@@ -47,10 +47,12 @@ Créait un champ texte permettant de définir une interaction textuelle remontan
 	- `channel` un *channel* qui reçoit la configuration sous format d'objet, `min` / `max` / `step` / ...,
 	- `format` cf [format sortie](valueType.md#format),
 	- `event` [ici](#ioE), permet l’émission des données en différé,
-	- `type` défini le type d'entrée `number` / `string` / `checkbox`,
+	- `type` défini le type d'entrée `number` / `range` / `string` / `checkbox`,
 	- `min` valeur minimum (`number`),
 	- `max` valeur maximum (`number`),
 	- `step` incrément / décrément pour le changement à la sourie (`number`),
 	- `title` texte affiché au survole de la sourie attention sera remplacé par les données issues du *channel* de config , 
 
-Attention si `event` est présent alors le `format` n'est pas pris en compte. 
+Attention si `event` est présent alors le `format` n'est pas pris en compte.
+
+le type `range` s'utilise comme le type `number`, il ne créait pas de champ à remplir mais un *slider* entre le min et le max
