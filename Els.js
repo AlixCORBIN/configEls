@@ -1096,22 +1096,34 @@ class Els_input extends Els_io {
 		Object.assign ( this.divData, this._config.fieldConfig )
 
 		this.divData.addEventListener ( "change", (ev)=>{
-			ev.target.classList.remove ( "err" );
-
-			if ( this._config.fieldConfig.min > ev.target.value )
+			switch ( this._config.fieldConfig.type )
 			{
-				console.log ( "min", this._config.fieldConfig.min, ev.target.value )
-				ev.stopImmediatePropagation ( );
-				ev.target.classList.add ( "err" );
-				ev.target.value = this._config.fieldConfig.min;
-			}
+				case "checkbox":
+				{
+					this.divData.value = this.divData.checked == true;
+					break;
+				}
+				default:
+				{
+					ev.target.classList.remove ( "err" );
 
-			if ( this._config.fieldConfig.max < ev.target.value )
-			{
-				console.log ( "min", this._config.fieldConfig.max, ev.target.value )
-				ev.target.classList.add ( "err" );
-				ev.stopImmediatePropagation ( );
-				ev.target.value = this._config.fieldConfig.max;
+					if ( this._config.fieldConfig.min > ev.target.value )
+					{
+						console.log ( "min", this._config.fieldConfig.min, ev.target.value )
+						ev.stopImmediatePropagation ( );
+						ev.target.classList.add ( "err" );
+						ev.target.value = this._config.fieldConfig.min;
+					}
+
+					if ( this._config.fieldConfig.max < ev.target.value )
+					{
+						console.log ( "min", this._config.fieldConfig.max, ev.target.value )
+						ev.target.classList.add ( "err" );
+						ev.stopImmediatePropagation ( );
+						ev.target.value = this._config.fieldConfig.max;
+					}
+					break;
+				}
 			}
 		});
 
@@ -1167,7 +1179,14 @@ class Els_input extends Els_io {
 			value = "...";
 		}
 		
-		this.divData.value = value;
+		if ( "checkbox" == this._config.fieldConfig.type )
+		{
+			this.divData.checked = [ true, "true", "TRUE", "on", "ON" ].includes ( value );
+		}
+		else
+		{
+			this.divData.value = value;
+		}
 	}
 
 	static canCreateNew ( )
