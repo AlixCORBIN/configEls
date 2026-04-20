@@ -787,39 +787,6 @@ class Els_io extends Els_Back {
 
 	get callFnct ( )
 	{
-		function getValue ( msg, coef = 1, obj = false )
-		{
-			let v = msg;
-			if ( "String" == v.constructor.name ) try
-			{
-				v = JSON.parse ( v );
-			}
-			catch ( e ) { }
-
-			if ( undefined != v.value )
-			{
-				v = v.value;
-			}
-
-			if ( obj )
-			{
-				if ( "String" == v ) try
-				{
-					v = JSON.parse ( v );
-				}
-				catch ( e )
-				{
-					console.log ( "Object requested : "+v );
-				}
-			}
-			else if ( !isNaN ( v ) )
-			{
-				v *= coef;
-			}
-
-			return v;
-		}
-
 		switch ( this._config.valueType )
 		{
 			case "obj":
@@ -831,7 +798,7 @@ class Els_io extends Els_Back {
 					}
 					let out = this._config.format || "";
 
-					let value = getValue ( msg, this._config.coef, true );
+					let value = Els_io.parseValue ( msg, this._config.coef, true );
 
 					if ( msg?.value?.label )
 					{
@@ -844,13 +811,20 @@ class Els_io extends Els_Back {
 						out = out.replace ( "${"+k+"}", value[ k ] );
 					}
 
+					out = out.replace ( /\${[^}]*}/g, "" );
+
+					if ( "" == out )
+					{
+						return;
+					}
+
 					this.value = out;
 				};
 			}
 			case "volume":
 			{
 				return (msg)=>{
-					let value = getValue ( msg, this._config.coef );
+					let value = Els_io.parseValue ( msg, this._config.coef );
 
 					if ( isNaN ( msg.value ) )
 					{
@@ -867,7 +841,7 @@ class Els_io extends Els_Back {
 			case "flow":
 			{
 				return (msg)=>{
-					let value = getValue ( msg, this._config.coef );
+					let value = Els_io.parseValue ( msg, this._config.coef );
 
 					if ( isNaN ( msg.value ) )
 					{
@@ -885,7 +859,7 @@ class Els_io extends Els_Back {
 			case "temperature":
 			{
 				return (msg)=>{
-					let value = getValue ( msg, this._config.coef );
+					let value = Els_io.parseValue ( msg, this._config.coef );
 
 					if ( isNaN ( value ) )
 					{
@@ -910,7 +884,7 @@ class Els_io extends Els_Back {
 			case "dateMs":
 			{
 				return (msg)=>{
-					let value = getValue ( msg, this._config.coef );
+					let value = Els_io.parseValue ( msg, this._config.coef );
 
 					if ( isNaN ( value ) )
 					{
@@ -935,7 +909,7 @@ class Els_io extends Els_Back {
 			case "error":
 			{
 				return (msg)=>{
-					let value = Number ( getValue ( msg ) );
+					let value = Number ( Els_io.parseValue ( msg ) );
 
 					this.value = value;
 					if ( value != 0 )
@@ -951,7 +925,7 @@ class Els_io extends Els_Back {
 			default:
 			{
 				return (msg)=>{
-					let value = getValue ( msg, this._config.coef );
+					let value = Els_io.parseValue ( msg, this._config.coef );
 
 					if ( isNaN ( value ) )
 					{
@@ -989,6 +963,39 @@ class Els_io extends Els_Back {
 			}
 		}
 	};
+
+	static parseValue ( msg, coef = 1, obj = false )
+	{
+		let v = msg;
+		if ( "String" == v.constructor.name ) try
+		{
+			v = JSON.parse ( v );
+		}
+		catch ( e ) { }
+
+		if ( undefined != v.value )
+		{
+			v = v.value;
+		}
+
+		if ( obj )
+		{
+			if ( "String" == v ) try
+			{
+				v = JSON.parse ( v );
+			}
+			catch ( e )
+			{
+				console.log ( "Object requested : "+v );
+			}
+		}
+		else if ( !isNaN ( v ) )
+		{
+			v *= coef;
+		}
+
+		return v;
+	}
 
 	static canCreateNew ( )
 	{

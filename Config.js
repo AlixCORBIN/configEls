@@ -121,10 +121,7 @@ export class View {
 					format = JSON.stringify ( format );
 				}
 
-				console.log ( value, format )
-
 				value = eval ( '`'+format+'`' );
-				console.log ( value )
 			}
 			catch ( e )
 			{
