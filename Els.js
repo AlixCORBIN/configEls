@@ -1190,7 +1190,7 @@ class Els_input extends Els_io {
 		
 		if ( "checkbox" == this._config.fieldConfig.type )
 		{
-			this.divData.checked = [ true, "true", "TRUE", "on", "ON", 1 ].includes ( value );
+			this.divData.checked = [ true, "true", "True", "TRUE", "on", "ON", 1 ].includes ( value );
 		}
 		else
 		{
