@@ -320,6 +320,27 @@ class Els_Back {
 	{
 		return Object.getPrototypeOf ( this );
 	}
+
+
+	static parseValue ( msg )
+	{
+		let v = undefined;
+		if ( "String" == msg.constructor.name ) try
+		{
+			v = JSON.parse ( msg );
+		}
+		catch ( e )
+		{
+			return msg;
+		}
+
+		if ( undefined != v.value )
+		{
+			v = v.value;
+		}
+
+		return v;
+	}
 }
 
 class Els_text extends Els_Back {
@@ -966,17 +987,7 @@ class Els_io extends Els_Back {
 
 	static parseValue ( msg, coef = 1, obj = false )
 	{
-		let v = msg;
-		if ( "String" == v.constructor.name ) try
-		{
-			v = JSON.parse ( v );
-		}
-		catch ( e ) { }
-
-		if ( undefined != v.value )
-		{
-			v = v.value;
-		}
+		let v = this.parent.parseValue ( msg );
 
 		if ( obj )
 		{
