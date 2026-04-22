@@ -2116,98 +2116,6 @@ class Els_graph extends Els_Back {
 			this.graph.zoom?.chart?.update ( );
 		}
 
-		const getCallback = ( c, index )=>{
-			switch ( this.config.subType )
-			{
-				case "signal":
-				{
-					return ( msg )=>{
-						if ( "Array" !== msg.value?.constructor.name )
-						{
-							return;
-						}
-
-						let vXY = msg.value.filter ( a=>a.x!=undefined&&a.y!=undefined );
-						let vY = msg.value.filter ( a=>a.x==undefined&&a.y!=undefined );
-						let vN = msg.value.filter ( a=>!isNaN( a ) );
-
-						let v = undefined;
-
-						if ( 0 < vXY.length )
-						{
-							v = vXY;
-						}
-						else if ( 0 < vY.length )
-						{
-							v = vY.map ( (v,i)=>{
-								v.x = i; 
-								return v;
-							});
-						}
-						else
-						{
-							v = vN.map ( (v,i)=>{
-								return {x:i, y:v};
-							});
-						}
-
-						this.graph.main.config.data.datasets[ index ].trueData = v;
-						this.graph.main.config.data.datasets[ index ].data = v.map ( p=>{
-							p.y*=c.coef;
-							return p;
-						});
-
-						this._updateGraph ( "main" );
-						this._updateZoom ( zoomData );
-					}
-				}
-				case "sync":
-				{
-					return ( msg )=>{
-						if ( this.graph.main.config.data.datasets[ index ].data.length < this.graph.main.config.data.labels.length  )
-						{ // add data only if we add a label for this data
-							// add the data to the last label
-							this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * c.coef;
-							this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = msg.value;
-						}
-
-						this._updateGraph ( "main" );
-						this._updateZoom ( zoomData );
-					}
-				}
-				case "async":
-				{
-					return ( msg )=>{
-						console.log ( "graph async" );
-						console.log ( msg.value );
-
-						return;
-
-						// TODO test management c.coef
-						this.graph.main.config.data.datasets[ index ].trueData.push ( JSON.parse ( msg.value ) );
-
-						let point = JSON.parse ( msg.value );
-						point.y *= c.coef;
-						this.graph.main.config.data.datasets[ index ].data.push ( point );
-
-						let deep = c.deep || this.config.deep;
-						if ( ( undefined != deep )
-							&& ( this.graph.main.config.data.datasets[ index ].data.length > deep ) )
-						{
-							this.graph.main.config.data.datasets[ index ].data.splice( 0, this.graph.main.config.data.datasets[ index ].data.length - deep )
-						}
-
-						this._updateGraph ( "main" );
-						this._updateZoom ( zoomData );
-					}
-				}
-				default:
-				{
-					return ( msg )=>{};
-				}
-			}
-		}
-
 		super( config, id );
 		
 		if ( !window.Chart )
@@ -2482,7 +2390,7 @@ class Els_graph extends Els_Back {
 			this._callArgs.push ({
 				channel: c.channel,
 				periode: c.periode || 0,
-				f: getCallback( c, index )
+				f: this.getCallFnct( c, index, zoomData )
 			});
 
 			c.coef = 1;
@@ -2752,6 +2660,129 @@ class Els_graph extends Els_Back {
 		for ( let item in this.graph )
 		{
 			this._updateGraph ( item, true );
+		}
+	}
+
+	getCallFnct ( config, index, zoomData = {} )
+	{
+		switch ( this.config.subType )
+		{
+			case "signal":
+			{
+				return ( msg )=>{
+					const inputs = Els_graph.parseValue ( msg );
+					let values = undefined;
+
+					switch ( inputs?.constructor.name )
+					{
+						case "Array":
+						{
+							let vXY = inputs.filter ( a=>a.x!=undefined&&a.y!=undefined );
+							let vY = inputs.filter ( a=>a.x==undefined&&a.y!=undefined );
+							let vN = inputs.filter ( a=>!isNaN( a ) );
+
+
+							if ( 0 < vXY.length )
+							{
+								values = vXY;
+							}
+							else if ( 0 < vY.length )
+							{
+								values = vY.map ( (v,i)=>{
+									v.x = i;
+									return v;
+								});
+							}
+							else
+							{
+								values = vN.map ( (v,i)=>{
+									return {x:i, y:v};
+								});
+							}
+
+							break;
+						}
+						case "Object":
+						{
+							if ( undefined == inputs.x?.length
+								|| inputs.x?.length != inputs.y?.length )
+							{
+								return;
+							}
+
+							values = [];
+							for ( let i = 0; i < inputs.x?.length; i++ )
+							{
+								values.push ({
+									x:inputs.x[ i ],
+									y:inputs.y[ i ]
+								})
+							}
+
+							break;
+						}
+						default:
+						{
+							return;
+						}
+					}
+
+					console.log( values )
+
+					this.graph.main.config.data.datasets[ index ].trueData = values;
+					this.graph.main.config.data.datasets[ index ].data = values.map ( p=>{
+						p.y*=config.coef;
+						return p;
+					});
+
+					this._updateGraph ( "main" );
+					this._updateZoom ( zoomData );
+				}
+			}
+			case "sync":
+			{
+				return ( msg )=>{
+					if ( this.graph.main.config.data.datasets[ index ].data.length < this.graph.main.config.data.labels.length  )
+					{ // add data only if we add a label for this data
+						// add the data to the last label
+						this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * c.coef;
+						this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = msg.value;
+					}
+
+					this._updateGraph ( "main" );
+					this._updateZoom ( zoomData );
+				}
+			}
+			case "async":
+			{
+				return ( msg )=>{
+					console.log ( "graph async" );
+					console.log ( msg.value );
+
+					return;
+
+					// TODO test management c.coef
+					this.graph.main.config.data.datasets[ index ].trueData.push ( JSON.parse ( msg.value ) );
+
+					let point = JSON.parse ( msg.value );
+					point.y *= c.coef;
+					this.graph.main.config.data.datasets[ index ].data.push ( point );
+
+					let deep = c.deep || this.config.deep;
+					if ( ( undefined != deep )
+						&& ( this.graph.main.config.data.datasets[ index ].data.length > deep ) )
+					{
+						this.graph.main.config.data.datasets[ index ].data.splice( 0, this.graph.main.config.data.datasets[ index ].data.length - deep )
+					}
+
+					this._updateGraph ( "main" );
+					this._updateZoom ( zoomData );
+				}
+			}
+			default:
+			{
+				return ( msg )=>{};
+			}
 		}
 	}
 
