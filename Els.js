@@ -222,7 +222,7 @@ class Els_Back {
 						}
 					}
 
-					sub[ key ].input.onkeyup = ()=>{sub[ key ].input.onchange};
+					sub[ key ].input.onkeyup = sub[ key ].input.onchange;
 					configDiv.appendChild ( sub[ key ].div );
 				}
 				catch ( e )
