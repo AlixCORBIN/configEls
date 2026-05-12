@@ -699,6 +699,11 @@ export class Config extends EventTarget {
 		this.view.addEventListener ( "done", this.view.callback = r=>this.save(r) );
 	}
 
+	reset ( )
+	{
+		localStorage.removeItem ( this._config.cookies.views );
+	}
+
 	get defaultConfig ( )
 	{
 		return {
