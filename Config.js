@@ -1,7 +1,7 @@
 import Els from "./Els.js"
 
 /// \brief read JSON config and create elements from it
-export class View {
+export class View extends EventTarget {
 
 	#eventData = {
 		// contient les données a envoyer sur evenement
@@ -16,6 +16,8 @@ export class View {
 	/// \param [ in ] params : config parameters
 	constructor ( config, id, params )
 	{
+		super ( );
+
 		if ( ( undefined == config )
 			|| ( undefined == id ) )
 		{
@@ -298,6 +300,7 @@ export class View {
 	{
 		return this._getPopup ( "new" )
 			.then ( ()=>{
+				let endEvent = new Event ( "done" );
 				document.body.appendChild ( this._popup.new.dom );
 
 				this._popup.new.dom.style.display = "";
@@ -317,6 +320,10 @@ export class View {
 					document.body.removeChild ( this._popup.new.dom );
 
 					this.setIO ( );
+
+					endEvent.ok = true;
+
+					this.dispatchEvent ( endEvent );
 				};
 
 				this._popup.new.els.view_popup_new_wait.onclick = ()=>{
@@ -327,6 +334,10 @@ export class View {
 					this._newClean ( );
 					
 					document.body.removeChild ( this._popup.new.dom );
+
+					endEvent.ok = false;
+
+					this.dispatchEvent ( endEvent );
 				}
 
 				this._popup.new.els.view_popup_new_add.onclick = ()=>{
@@ -358,6 +369,11 @@ export class View {
 					this._newClean ( );
 
 					document.body.removeChild ( this._popup.new.dom );
+
+
+					let endEvent = new Event ( "done" );
+					endEvent.ok = true;
+					this.dispatchEvent ( endEvent );
 				};
 			})
 			.then ( ()=>{
@@ -535,14 +551,20 @@ export class Config extends EventTarget {
 
 	}
 
-	save ( )
+	save ( status = {ok:true} )
 	{
+		console.log ( "save", status, this._config?.cookies )
+		if ( !status?.ok )
+		{
+			return Promise.resolve ( )
+		}
+
 		if ( !this._config?.cookies?.views )
 		{
 			return Promise.reject ( "can't save cookie name not defined" );
 		}
 
-		localStorage.setItem ( this._config.cookie.views, JSON.stringify ( this.views.map ( v=>v.config ) ) );
+		localStorage.setItem ( this._config.cookies.views, JSON.stringify ( this.views.map ( v=>v.config ) ) );
 
 		return Promise.resolve ( );
 	}
@@ -651,6 +673,30 @@ export class Config extends EventTarget {
 				}
 				return data;
 			})
+	}
+
+	modify ( index )
+	{
+		if ( this.view.callback )
+		{
+			this.view.removeEventListener ( "done", this.view.callback );
+		}
+
+		this.view.modify ( index );
+
+		this.view.addEventListener ( "done", this.view.callback = r=>this.save(r) );
+	}
+
+	new ( )
+	{
+		if ( this.view.callback )
+		{
+			this.view.removeEventListener ( "done", this.view.callback );
+		}
+
+		this.view.new ( );
+
+		this.view.addEventListener ( "done", this.view.callback = r=>this.save(r) );
 	}
 
 	get defaultConfig ( )

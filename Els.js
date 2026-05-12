@@ -1289,8 +1289,9 @@ class Els_select extends Els_io {
 
 			this.divData.appendChild ( opt );
 
-			this.value = this.select.value;
 		});
+
+		this.value = this.select.value;
 
 		this.divData.disabled = ( this.select.options?.length <= 0 );
 	}
@@ -2727,8 +2728,6 @@ class Els_graph extends Els_Back {
 						}
 					}
 
-					console.log( values )
-
 					this.graph.main.config.data.datasets[ index ].trueData = values;
 					this.graph.main.config.data.datasets[ index ].data = values.map ( p=>{
 						p.y*=config.coef;
@@ -2745,7 +2744,7 @@ class Els_graph extends Els_Back {
 					if ( this.graph.main.config.data.datasets[ index ].data.length < this.graph.main.config.data.labels.length  )
 					{ // add data only if we add a label for this data
 						// add the data to the last label
-						this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * c.coef;
+						this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * config.coef;
 						this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = msg.value;
 					}
 
