@@ -109,7 +109,26 @@ les  options sont les même pour tous les graphs :
 ## données:
 Attention les données a transmettre ne sont pas les même en fonction des types de graphs :
 
-- sync :` WEBSOCKET CHANNEL X` et `WEBSOCKET CHANNEL Y` sont de simple données numériques,
-- async : `WEBSOCKET CHANNEL XY` est un objet au format : `{x: 2, y: 1.3}`,
-- signal : `WEBSOCKET CHANNEL SIGNAL` est un table d'objets : `[{x: 1, y: 1.3},{x: 2, y: 1.6},{x: 3, y: 1.7},...]`
+### sync : 
+` WEBSOCKET CHANNEL X` et `WEBSOCKET CHANNEL Y` sont de simple données numériques,
+
+les deux *channels* sont "synchronisés"
+
+### async :
+`WEBSOCKET CHANNEL XY` peut être de plusieurs formats :
+ - un objet au format : `{x: 2, y: 1.3}`,
+ - un objet au format : `{y: 1.3}`,
+ - un nombre : `1.3`,
+
+Dans les deux cas ou le X n'est pas défini, il le sera automatiquement :
+- si `xAxisType` est défini comme une `date`, alors x est défini sur la date au moment de la réception
+- si `xAxisType` n'est défini comme une `date`, alors x sera défini comme l'index x précédent +1
+
+### signal :
+`WEBSOCKET CHANNEL SIGNAL` peut être de plusieurs formats :
+- une table d'objets : `[{x: 1, y: 1.3},{x: 2, y: 1.6},{x: 3, y: 1.7},...]`
+- une table d'objets : `[{y: 1.3},{y: 1.6},{y: 1.7},...]`
+- une table de nombres : `[1.3,1.6,1.7,...]`
+
+Dans les deux cas ou le X n'est pas défini, il le sera automatiquement, x sera défini comme l'index de la donnée dans la table.
 

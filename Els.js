@@ -2062,7 +2062,7 @@ class Els_graph extends Els_Back {
 		subType:"sync", // sync/signaml/async
 		channel:"WEBSOCKET CHANNEL X",
 		periode:0,
-		coef:1, // dans le cas ou le X doit etre modifié
+		coef: undefined, // dans le cas ou le X doit etre modifié
 		curve:[
 			{
 				name:"Courbe 1",
@@ -2179,14 +2179,6 @@ class Els_graph extends Els_Back {
 		//  add main graph to the displayed elements
 		this.divMain.appendChild( this.graph.main.canvas );
 
-		// nanagement of xAxis type if it's not a pure value like date
-		if ( "date" == this.config.xAxisType )
-		{
-			this.graph.main.config.options.scales.x.ticks = {
-				callback: xAxisDateCallback
-			}
-		}
-
 		// defined base config of the graphs signal, sync or async
 		if ( this.config.subType == "sync" )
 		{ // in case of sync graph set the X axis data input
@@ -2195,17 +2187,25 @@ class Els_graph extends Els_Back {
 				labels:[],
 				datasets:[]
 			};
+			
+			// nanagement of xAxis type if it's not a pure value like date
+			if ( "date" == this.config.xAxisType )
+			{
+				// TODO
+			}
+
 			let cb = {
 				periode: this.config.periode || 0,
 				channel: this.config.channel,
 				f: (msg)=>{
+					let value = Els_graph.parseValue ( msg );
 					if ( this.config.coef )
 					{ // in case of you need to appli coef on XAxis data
-						this.graph.main.config.data.labels.push ( msg.value * this.config.coef );
+						this.graph.main.config.data.labels.push ( value * this.config.coef );
 					}
 					else
 					{
-						this.graph.main.config.data.labels.push ( msg.value );
+						this.graph.main.config.data.labels.push ( value );
 					}
 
 					if ( this.graph.main.config.data.labels.length > config.deep  )
@@ -2229,6 +2229,14 @@ class Els_graph extends Els_Back {
 			this.graph.main.config.data = {
 				datasets:[]
 			};
+
+			// nanagement of xAxis type if it's not a pure value like date
+			if ( "date" == this.config.xAxisType )
+			{
+				this.graph.main.config.options.scales.x.ticks = {
+					callback: xAxisDateCallback
+				}
+			}
 		}
 
 		// creat graph
@@ -2741,11 +2749,19 @@ class Els_graph extends Els_Back {
 			case "sync":
 			{
 				return ( msg )=>{
+					const input = Els_graph.parseValue ( msg );
 					if ( this.graph.main.config.data.datasets[ index ].data.length < this.graph.main.config.data.labels.length  )
 					{ // add data only if we add a label for this data
 						// add the data to the last label
-						this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = msg.value * config.coef;
-						this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = msg.value;
+						if ( config.coef )
+						{
+							this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = input * config.coef;
+						}
+						else
+						{
+							this.graph.main.config.data.datasets[ index ].data[ this.graph.main.config.data.labels.length - 1 ] = input;
+						}
+						this.graph.main.config.data.datasets[ index ].trueData[ this.graph.main.config.data.labels.length - 1 ] = input;
 					}
 
 					this._updateGraph ( "main" );
@@ -2755,19 +2771,53 @@ class Els_graph extends Els_Back {
 			case "async":
 			{
 				return ( msg )=>{
-					console.log ( "graph async" );
-					console.log ( msg.value );
+					let input = Els_graph.parseValue ( msg );
 
-					return;
+					if ( "Number" == input?.constructor.name )
+					{
+						input = {
+							y: input
+						};
+					}
+					else if ( "Object" != input?.constructor.name )
+					{
+						return;
+					}
 
-					// TODO test management c.coef
-					this.graph.main.config.data.datasets[ index ].trueData.push ( JSON.parse ( msg.value ) );
+					if ( undefined == input.y )
+					{
+						return;
+					}
+					else if ( input.x && input.y )
+					{ // everything ok
+					}
+					else if ( "date" == this.config.xAxisType )
+					{ // missing X so ad date as X
+						input.x = new Date ( );
+					}
+					else
+					{ // missing X and it's not date by default add X as index
+						let lentgh = this.graph.main.config.data.datasets[ index ].data.length
+						if ( 0 == length )
+						{
+							input.x = 0;
+						}
+						else
+						{
+							input.x = this.graph.main.config.data.datasets[ index ].data[ length - 1 ].x + 1;
+						}
+					}
 
-					let point = JSON.parse ( msg.value );
-					point.y *= c.coef;
-					this.graph.main.config.data.datasets[ index ].data.push ( point );
+					this.graph.main.config.data.datasets[ index ].trueData.push ( {...input} );
 
-					let deep = c.deep || this.config.deep;
+					if ( config.coef )
+					{
+						input.y *= config.coef;
+					}
+
+					this.graph.main.config.data.datasets[ index ].data.push ( input );
+
+					let deep = config.deep || this.config.deep;
 					if ( ( undefined != deep )
 						&& ( this.graph.main.config.data.datasets[ index ].data.length > deep ) )
 					{
