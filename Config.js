@@ -546,9 +546,42 @@ export class Config extends EventTarget {
 			.catch ( r=>console.log( "error", r ) )
 	}
 
-	export ( )
+	export ( output = "files" )
 	{
+		let files = {
+			"main.js": JSON.parse ( JSON.stringify ( this.views.map ( v=>v.config ) ) )
+		}
 
+		let list = undefined;
+		switch ( output )
+		{
+			case "files":
+			{
+				files[ "main.js" ]
+					.filter ( view=>view.file )
+					.map ( view=>{
+						files[ view.file ] = view.dataset;
+						delete view.dataset;
+					})
+				list = Object.keys ( files );
+				break;
+			}
+			case "file":
+			{
+				list = [ "main.js" ];
+				break;
+			}
+		}
+
+		list.map ( f=>{
+			let downloadLink = document.createElement ( "a" );
+			downloadLink.href = 'data:text/json;charset=utf-8,' + encodeURI ( JSON.stringify ( files[ f ], null, 1 ).replace ( / /g, "\t" ) );
+			downloadLink.download = f;
+
+			document.body.appendChild ( downloadLink );
+			downloadLink.click();
+			document.body.removeChild ( downloadLink );
+		})
 	}
 
 	save ( status = {ok:true} )
