@@ -1219,8 +1219,13 @@ class Els_select extends Els_io {
 			throw "only one chanel for inputs";
 		}
 
+		if ( !this._config?.fieldConfig )
+		{
+			return
+		}
+
 		// used to give min / max or other data;
-		if ( this._config?.fieldConfig?.channel )
+		if ( this._config.fieldConfig.channel )
 		{
 			let cb = {
 				periode: -1, // send once
@@ -1233,7 +1238,20 @@ class Els_select extends Els_io {
 			this._callArgs.push ( cb );
 		}
 
-		this.options = this._config.fieldConfig?.options;
+		if ( this._config.fieldConfig.options )
+		{
+			this.options = this._config.fieldConfig?.options;
+		}
+		else if ( this._config.fieldConfig.text_id )
+		{
+			let json = {
+				textId: this._config.fieldConfig.text_id,
+				prefix: config?.prefix
+			};
+
+			this.divData.classList.add ( "translate" );
+			this.divData.dataset.translate = JSON.stringify ( json );
+		}
 	}
 
 	get domType ( )
