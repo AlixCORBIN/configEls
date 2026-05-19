@@ -3103,7 +3103,7 @@ class Els_csv extends Els_Back {
 			}
 			else
 			{
-				el.radio.checked = true;
+				el[ 0 ].radio.checked = true;
 			}
 
 			delete this._config.limitSelected;
