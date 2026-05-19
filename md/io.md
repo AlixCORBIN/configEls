@@ -35,7 +35,7 @@ Créait un champ de texte qui sera mis à jour à partir des données envoyés p
 	- `"max"` : affiche la plus *grande* valeur de la table,
 - `valueType` permet de changer la gestion de la valeur a afficher cf [valueType](valueType.md),
 - `unit` cf [`unit`](valueType.md#unit),
-- `format` cf [format](#valueType.md#format),
+- `format` cf [format](valueType.md#format),
 
 ## <a id='ioA' />io.action :
 
