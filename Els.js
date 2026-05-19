@@ -2981,6 +2981,7 @@ class Els_csv extends Els_Back {
 		download: false,
 		limitSelected: undefined,
 		channel:{
+			// type:"channel", // "obj" / "channel" get one obect what content everything or each dat as i own channel
 			// synchro:"CHANNEL TIME", // channel de synchro (horodatage)
 			// title:"chrono", // titre de la colone de synchro dans le CSV
 			// data:["DATA_1","DATA_2"], // channels de donnés
@@ -3146,31 +3147,67 @@ class Els_csv extends Els_Back {
 
 		this.csv = {};
 		
-		// data synchro channel
-		let cb = {
-			periode: this._config.periode,
-			channel: this._config.channel.synchro,
-			f: (msg)=>{
-				if ( this.config.coef )
-				{
-					this.lastIndex = msg.value * this.config.coef;
-				}
-				else
-				{
-					this.lastIndex = msg.value;
-				}
+		switch ( this._config.channel.type )
+		{
+			default:
+			case "channel":
+			{
+				this._callArgs.push ({
+					periode: this._config.periode,
+					channel: this._config.channel.synchro,
+					f: (msg)=>{
+						console.log ( msg.value );
+						if ( this.config.coef )
+						{
+							this.lastIndex = msg.value * this.config.coef;
+						}
+						else
+						{
+							this.lastIndex = msg.value;
+						}
 
-				this.csv[ this.lastIndex ] = [];
+						this.csv[ this.lastIndex ] = [];
 
-				this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
+						this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
 
-				this.#checkLimit ( );
+						this.#checkLimit ( );
+					}
+				});
+				break;
 			}
-		};
+			case "obj":
+			{
+				this._callArgs.push ({
+					periode: this._config.periode,
+					channel: this._config.channel.data,
+					f: (msg)=>{
+						if ( undefined == this.lastIndex )
+						{
+							this.lastIndex = 0;
 
-		this._callArgs.push ( cb );
+							this._config.channel.titles = Object.keys ( msg.value );
+						}
+						else
+						{
+							this.lastIndex++;
+						}
 
-		for ( let [i,c] of this._config.channel.data.entries() )
+						this.csv[ this.lastIndex ] = Object.values ( msg.value );
+
+						this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
+
+						this.#checkLimit ( );
+					}
+				});
+				break;
+			}
+		}
+		// data synchro channel
+
+		if ( "Array" != this._config.channel?.data?.constructor.name )
+		{
+		}
+		else for ( let [i,c] of this._config.channel.data.entries() )
 		{
 			let cb = {
 				periode: this._config.periode,
@@ -3328,7 +3365,7 @@ class Els_csv extends Els_Back {
 		// clear the entries dates
 		this.entryDate = this.entryDate.filter ( e=>tKeys.includes ( e.index ) );
 
-		keys = (this._config.channel.title || this._config.channel.synchro) + this._config.separator;
+		keys = (this._config.channel.title || this._config.channel.synchro || "index") + this._config.separator;
 
 		// create the columnt headers
 		if ( this._config.channel.titles )
