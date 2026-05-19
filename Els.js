@@ -2979,7 +2979,7 @@ class Els_csv extends Els_Back {
 			line: 7200, // nombre maximum de ligne enregistré dans le CSV
 		},
 		download: false,
-		limitSelected: undefined,
+		limitSelected: undefined, // "line" / "time" / "size"
 		channel:{
 			// type:"channel", // "obj" / "channel" get one obect what content everything or each dat as i own channel
 			// synchro:"CHANNEL TIME", // channel de synchro (horodatage)
@@ -3146,83 +3146,8 @@ class Els_csv extends Els_Back {
 		this.entryDate = [];
 
 		this.csv = {};
-		
-		switch ( this._config.channel.type )
-		{
-			default:
-			case "channel":
-			{
-				this._callArgs.push ({
-					periode: this._config.periode,
-					channel: this._config.channel.synchro,
-					f: (msg)=>{
-						console.log ( msg.value );
-						if ( this.config.coef )
-						{
-							this.lastIndex = msg.value * this.config.coef;
-						}
-						else
-						{
-							this.lastIndex = msg.value;
-						}
 
-						this.csv[ this.lastIndex ] = [];
-
-						this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
-
-						this.#checkLimit ( );
-					}
-				});
-				break;
-			}
-			case "obj":
-			{
-				this._callArgs.push ({
-					periode: this._config.periode,
-					channel: this._config.channel.data,
-					f: (msg)=>{
-						if ( undefined == this.lastIndex )
-						{
-							this.lastIndex = 0;
-
-							this._config.channel.titles = Object.keys ( msg.value );
-						}
-						else
-						{
-							this.lastIndex++;
-						}
-
-						this.csv[ this.lastIndex ] = Object.values ( msg.value );
-
-						this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
-
-						this.#checkLimit ( );
-					}
-				});
-				break;
-			}
-		}
-		// data synchro channel
-
-		if ( "Array" != this._config.channel?.data?.constructor.name )
-		{
-		}
-		else for ( let [i,c] of this._config.channel.data.entries() )
-		{
-			let cb = {
-				periode: this._config.periode,
-				channel: c,
-				f: (msg)=>{
-					if ( ( undefined != this.lastIndex )
-						&& ( this.csv?.[ this.lastIndex ] ) )
-					{
-						this.csv[ this.lastIndex ][ i ] = msg.value;
-					}
-				}
-			};
-
-			this._callArgs.push ( cb );
-		}
+		this._callArgs.push ( ...this._callbacks );
 
 		this.clean.addEventListener ('click', ()=>{
 			this.#cleanData ( );
@@ -3404,6 +3329,81 @@ class Els_csv extends Els_Back {
 	#cleanData ( )
 	{
 		this.csv = {};
+	}
+
+	// return callbacks
+	get _callbacks ( )
+	{
+		switch ( this._config.channel.type )
+		{
+			default:
+			case "channel":
+			{
+				let out = [{
+						periode: this._config.periode,
+						channel: this._config.channel.synchro,
+						f: (msg)=>{
+							console.log ( msg.value );
+							if ( this.config.coef )
+							{
+								this.lastIndex = msg.value * this.config.coef;
+							}
+							else
+							{
+								this.lastIndex = msg.value;
+							}
+
+							this.csv[ this.lastIndex ] = [];
+
+							this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
+
+							this.#checkLimit ( );
+						}
+					}];
+
+				for ( let [i,c] of this._config.channel.data.entries() )
+				{
+					out.push ({
+						periode: this._config.periode,
+						channel: c,
+						f: (msg)=>{
+							if ( ( undefined != this.lastIndex )
+								&& ( this.csv?.[ this.lastIndex ] ) )
+							{
+								this.csv[ this.lastIndex ][ i ] = msg.value;
+							}
+						}
+					});
+				}
+
+				return out;
+			}
+			case "obj":
+			{
+				return [{
+						periode: this._config.periode,
+						channel: this._config.channel.data,
+						f: (msg)=>{
+							if ( undefined == this.lastIndex )
+							{
+								this.lastIndex = 0;
+
+								this._config.channel.titles = Object.keys ( msg.value );
+							}
+							else
+							{
+								this.lastIndex++;
+							}
+
+							this.csv[ this.lastIndex ] = Object.values ( msg.value );
+
+							this.entryDate.push ( {date:new Date ( ), index:this.lastIndex} );
+
+							this.#checkLimit ( );
+						}
+					}]
+			}
+		}
 	}
 
 	update ( config )
