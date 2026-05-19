@@ -3096,7 +3096,7 @@ class Els_csv extends Els_Back {
 		// init what limit should be used following config
 		if ( this._config.limitSelected )
 		{
-			let el = this.tableConfig.filter ( t=>t.name == this._cofnig.limitSelected );
+			let el = this.tableConfig.filter ( t=>t.name == this._config.limitSelected );
 			if ( undefined == el.length )
 			{
 				this.tableConfig[ 0 ].radio.checked = true;
