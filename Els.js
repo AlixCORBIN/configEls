@@ -324,7 +324,7 @@ class Els_Back {
 
 	static parseValue ( msg )
 	{
-		let v = undefined;
+		let v = msg;
 		if ( "String" == msg.constructor.name ) try
 		{
 			v = JSON.parse ( msg );
@@ -334,7 +334,7 @@ class Els_Back {
 			return msg;
 		}
 
-		if ( undefined != v.value )
+		if ( undefined != v?.value )
 		{
 			v = v.value;
 		}

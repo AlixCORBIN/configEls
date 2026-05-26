@@ -23,8 +23,8 @@ Créait un champ texte permettant de définir une interaction textuelle remontan
 		// - obj cf section io.obj
 	unit: <Data>, // cf Chapter valueType
 	format: undefined // format d'envoi de données
+	channel:"channelConfig",
 	fieldConfig:{
-		channel:"channelConfig",
 		format: {
 			dataId: "${value}"
 		},
