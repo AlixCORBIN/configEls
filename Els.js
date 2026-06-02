@@ -2925,9 +2925,7 @@ class Els_graph extends Els_Back {
 				args: [ "Nb of Curves" ],
 				type: "number",
 				min: 0,
-				onchange: (ev)=>{
-					console.log ( 'coucou' );
-				}
+				onchange: (ev)=>{}
 			},
 			deep: {
 				fnct: _createInput,
@@ -3797,6 +3795,22 @@ function _createSelect ( array = [], inlabel )
 	return [div,select];
 }
 
+/// \brief Create a text node
+/// \param [ in ] str : string to display
+/// \return [div,label]
+///     div : main object need to be added to the DOM list
+///     label : DOM element with str
+function _createText ( str )
+{
+	let div = document.createElement ( "div" );
+	div.style.display = "flex";
+
+	let label = document.createTextNode ( str );
+	div.appendChild ( label );
+
+	return [div,label];
+}
+
 /// \brief Create input entry with eventualy label and select on the right
 ///     the select add/update value into the input field
 /// \param [ in ] inText : label of entry
@@ -4516,7 +4530,7 @@ function _createTable ( outDivs = {}, params )
 		let nbRowDom = outDivs.sub[ params.input ].input;
 		let data = params.json;
 
-		for ( let lvl of params.dataPath?.split ( ".") )
+		for ( let lvl of params.dataPath?.split ( "." ) )
 		{
 			data = data[ lvl ];
 		}
