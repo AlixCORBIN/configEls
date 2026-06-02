@@ -210,13 +210,31 @@ class Els_Back {
 					else
 					{
 						sub[ key ].input.onchange = (ev)=>{
+							let outItem = key;
+							let outObj = config;
+
+							if ( item.dataPath )
+							{
+								let s = item.dataPath.split ( "." );
+
+								outItem = s.pop ( );
+
+								s.map ( s2=>{
+									if ( "Object" != outObj[ s2 ].constructor.name )
+									{
+										outObj[ s2 ] = {};
+									}
+									outObj = outObj[ s2 ];
+								});
+							}
+
 							if ( "number" == item.type  )
 							{
-								config[ key ] = Number ( ev.target.value );
+								outObj[ outItem ] = Number ( ev.target.value );
 							}
 							else
 							{
-								config[ key ] = ev.target.value;
+								outObj[ outItem ] = ev.target.value;
 							}
 							Els_Back.newJson ( config, jsonDiv, outDiv );
 						}
