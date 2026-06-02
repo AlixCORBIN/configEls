@@ -1299,6 +1299,19 @@ class Els_input extends Els_io {
 }
 
 class Els_select extends Els_io {
+	static _defaultConfig = {
+		type: "select",
+		channel: "WEBSOCKET CHANNEL",
+		periode: 1,
+		label: undefined,
+		valueType: undefined,
+		format: undefined,
+		fieldConfig: {
+			options:[],
+			format: undefined,
+		},
+	};
+
 	constructor ( config,  id )
 	{
 		super( config, id );
@@ -1443,7 +1456,61 @@ class Els_select extends Els_io {
 
 	static canCreateNew ( )
 	{
-		return false;
+		return true;
+	}
+
+	static new ( params = {}, config = undefined, deep = 0 )
+	{
+		if ( undefined == params.id )
+		{
+			params.id = Math.random ( );
+		}
+
+		let json = undefined;
+		if ( deep )
+		{ // if not first call (deep!=0) then config no need to be check (check previously in child class)
+			json = config;
+		}
+		else
+		{
+			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
+		}
+
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		params.confItem = Object.assign ({
+			nbOptions: {
+				fnct: _createInput,
+				args: [ "Nb of Options" ],
+				type: "number",
+				min: 0,
+				onchange: ()=>{},
+			},
+		});
+
+		let divs = this.parent.new ( params, json, deep + 1 );
+
+		try
+		{
+			_createTable ( divs, {
+				cols:[
+					{text:"value"},
+					{text:"text"},
+				],
+				input: "nbOptions",
+				dataPath: "fieldConfig.options",
+				json: json,
+			} );
+		}
+		catch ( e )
+		{
+			console.log ( e )
+		}
+
+		return divs;
 	}
 }
 
