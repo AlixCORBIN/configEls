@@ -1105,6 +1105,13 @@ class Els_input extends Els_io {
 		prefix: undefined,
 		text_id: undefined,
 		unit: undefined,
+		fieldConfig:{
+			type: undefined,
+			min: undefined,
+			max: undefined,
+			step: undefined,
+			title: undefined,
+		},
 	};
 
 	static _choices = {
@@ -1218,7 +1225,76 @@ class Els_input extends Els_io {
 
 	static canCreateNew ( )
 	{
-		return false;
+		return true;
+	}
+
+	static new ( params = {}, config = undefined, deep = 0 )
+	{
+		if ( undefined == params.id )
+		{
+			params.id = Math.random ( );
+		}
+
+		let json = undefined;
+		if ( deep )
+		{ // if not first call (deep!=0) then config no need to be check (check previously in child class)
+			json = config;
+		}
+		else
+		{
+			json = _objMerge ( Els[ params.class ]._defaultConfig, config );
+		}
+
+		if ( !params.confItem )
+		{
+			params.confItem = {};
+		}
+
+		params.confItem = Object.assign ({
+			fType: {
+				fnct: _createSelect,
+				args: [ [ "number", "text", "email" ], "type" ],
+				placeholder: "value type",
+				value: config?.fieldConfig?.type,
+				help: "text to display as value until data set",
+				dataPath: "fieldConfig.type",
+			},
+			text: {
+				type: "text",
+				fnct: _createText,
+				args: [ "only for type number" ],
+			},
+			fMin: {
+				type: "number",
+				fnct: _createInput,
+				args: [ "min" ],
+				placeholder: "min value",
+				value: config?.fieldConfig?.min,
+				help: "min value",
+				dataPath: "fieldConfig.min",
+			},
+			fMax: {
+				type: "number",
+				fnct: _createInput,
+				args: [ "max" ],
+				placeholder: "max value",
+				value: config?.fieldConfig?.max,
+				help: "max value",
+				dataPath: "fieldConfig.max",
+			},
+			fStep: {
+				type: "number",
+				fnct: _createInput,
+				args: [ "step" ],
+				placeholder: "change step",
+				value: config?.fieldConfig?.step,
+				help: "change step",
+				dataPath: "fieldConfig.step",
+			},
+		},
+		params.confItem);
+
+		return this.parent.new ( params, json, deep + 1 );
 	}
 }
 
