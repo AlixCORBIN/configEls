@@ -3559,6 +3559,45 @@ class Els_csv extends Els_Back {
 
 	#saveData ( callPrompt = this._config.prompt )
 	{
+		function getValuesFromObj ( obj )
+		{
+			switch ( obj.constructor.name )
+			{
+				case "Object":
+				{
+					return getValuesFromObj ( Object.values ( obj ) );
+				}
+				case "Array":
+				{
+					return obj
+						.map ( e=>{
+							switch ( e.constructor.name )
+							{
+								case "Object":
+								{
+									return getValuesFromObj ( Object.values ( e ) );
+								}
+								case "Array":
+								{
+									return getValuesFromObj ( e );
+								}
+								default:
+								{
+									return e;
+								}
+							}
+						})
+						.flat ( Infinity )
+				}
+				default:
+				{
+					console.log ( "CSV can't manage this data" )
+					console.log ( obj );
+					return [];
+				}
+			}
+		}
+
 		let keys = "";
 		let out = [];
 
@@ -3572,7 +3611,7 @@ class Els_csv extends Els_Back {
 			delete this.csv[ k ];
 			this.entryDate.splice ( this.entryDate.map ( e=>e.index ).indexOf ( k ), 1 );
 
-			out.push ( k+this._config.separator+data.join ( this._config.separator ) );
+			out.push ( k+this._config.separator+getValuesFromObj ( data ).join ( "," ) );
 		}
 		let tKeys = Object.keys ( this.csv );
 
@@ -3623,6 +3662,33 @@ class Els_csv extends Els_Back {
 	// return callbacks
 	get _callbacks ( )
 	{
+		function getLabelsFromObj ( obj, prefix = [] )
+		{
+			switch ( obj.constructor.name )
+			{
+				case "Array":
+				{
+					return obj.map ( (subObj, i)=>getLabelsFromObj ( subObj, [ ...prefix, i ] ) );
+				}
+				case "Object":
+				{
+					let tmp = Object.keys ( obj )
+						.map ( k=>{
+							if ( [ "Object", "Array" ].includes ( obj[ k ].constructor.name ) )
+							{
+								return getLabelsFromObj ( obj[ k ], [ ...prefix, k ] );
+							}
+							else
+							{
+								return [ ...prefix, k ].join ( "." );
+							}
+						})
+
+					return tmp.flat ( Infinity );
+				}
+			}
+		}
+
 		switch ( this._config.channel.type )
 		{
 			default:
@@ -3632,7 +3698,6 @@ class Els_csv extends Els_Back {
 						periode: this._config.periode,
 						channel: this._config.channel.synchro,
 						f: (msg)=>{
-							console.log ( msg.value );
 							if ( this.config.coef )
 							{
 								this.lastIndex = msg.value * this.config.coef;
@@ -3677,7 +3742,7 @@ class Els_csv extends Els_Back {
 							{
 								this.lastIndex = 0;
 
-								this._config.channel.titles = Object.keys ( msg.value );
+								this._config.channel.titles = getLabelsFromObj ( msg.value );
 							}
 							else
 							{
