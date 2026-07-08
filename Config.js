@@ -690,7 +690,8 @@ export class Config extends EventTarget {
 								file: d.file,
 								path: params.path
 							})
-							.then ( r=>d.dataset = r );
+							.then ( r=>d.dataset = r )
+							.catch ( r=>console.log ( "error reading file", d.file, r ) )
 					}
 					else
 					{
@@ -700,7 +701,6 @@ export class Config extends EventTarget {
 				});
 
 				return Promise.all ( promises )
-					.catch ( console.error )
 					.then ( ()=>data )
 			})
 			.then( data=>{
