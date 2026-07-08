@@ -517,6 +517,11 @@ export class View extends EventTarget {
 	{
 		return this._config;
 	}
+
+	get name ( )
+	{
+		return this._config.name;
+	}
 }
 
 export class Config extends EventTarget {
