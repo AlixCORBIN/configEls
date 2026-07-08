@@ -7,13 +7,24 @@
 	type: "button",
 	options:[
 		{
-			label: "X", // text avant le bouton
-			text: "Y", // text dans le bouton
-			cmd: "myCmd", // la commande renvoyé au serveur
-			event: undefined, // l'event qui sera emis sur la globalité de la page
+			label:{
+				txt:"X",
+				style:"",
+				classList:[],
+			},
+			button:{
+				txt:"Y",
+				style:"",
+				classList:[],
+			},
+			cmd:"dataLogger"
+			event: myCmd, // l'event qui sera emis sur la globalité de la page
 		}
 	]
 }
 ```
+
+- `style` : can be undefined
+- `classList` : can be undefined
 
 si `cmd` n'est pas défini seul l'événement de page sera fonctionnel et inversement.

@@ -31,7 +31,7 @@ class Els_Back {
 
 	/// \brief update style
 	/// \aram [ in ] config : object with the input element need to be updated
-	_update ( config )
+	_update ( config, domEl = this._domEl )
 	{
 		if ( !config )
 		{
@@ -45,12 +45,12 @@ class Els_Back {
 			{
 				case 'Object':
 				{
-					Object.assign ( this._domEl.style, config.style );
+					Object.assign ( domEl.style, config.style );
 					break;
 				}
 				case 'String':
 				{
-					this._domEl.style.cssText = config.style;
+					domEl.style.cssText = config.style;
 					break;
 				}
 				case undefined:
@@ -64,6 +64,32 @@ class Els_Back {
 					console.log ( config?.style?.constructor.name );
 					break;
 				}
+			}
+
+			switch ( config.classList?.constructor.name )
+			{
+				case 'Array':
+				{
+					domEl.classList.add ( ...config.classList )
+					break;
+				}
+				case 'String':
+				{
+					domEl.classList.add ( config.classList )
+					break;
+				}
+				case undefined:
+				{
+					break;
+				}
+				default:
+				{
+					console.error ( 'Unknown classList object prototype' );
+					console.log ( config?.classList );
+					console.log ( config?.classList?.constructor.name );
+					break;
+				}
+
 			}
 		}
 		catch ( e )
@@ -3901,8 +3927,11 @@ class Els_button extends Els_Back {
 		obj.label.style.flexGrow = 1;
 		obj.button.style.flexGrow = 1;
 
-		obj.label.innerText = config.label || "";
-		obj.button.innerText = config.text || "X";
+		obj.label.innerText = config.label?.txt || "";
+		obj.button.innerText = config.button?.txt || "X";
+
+		this._update ( config.label, obj.label );
+		this._update ( config.button, obj.button );
 
 		Object.assign ( obj.div.style, {
 			display: "flex",
